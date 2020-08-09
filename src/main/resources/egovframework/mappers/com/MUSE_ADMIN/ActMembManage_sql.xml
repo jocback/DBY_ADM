@@ -1,0 +1,616 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ActMembManage">
+
+	<select id="selectActMembList" parameterType="ActManageSearchVO" resultType="egovMap">
+			SELECT *	FROM (SELECT ROW_NUMBER() OVER( ORDER BY 
+			<if test="pageView.equals('EXCEL')">M_NAME ASC, </if>
+			<if test="searchActgubun.equals('21')">ISNULL(P_SEQ,0) DESC, </if>
+			REGDT DESC) 
+			<if test="returnItem != null and !returnItem.equals('')">
+				<foreach item="item" index="index" collection="returnItem" open="" close="" separator=",">
+				${item}
+				</foreach>
+			</if>
+			<if test="returnItem == null or returnItem.equals('')">
+				rn, ACT.*
+			</if>
+			<![CDATA[
+						FROM
+				(SELECT 
+							A.M_IDX
+						,	A.M_ID
+						,	A.M_NAME
+						,	DBO.FNDECODE(A.M_SEX,'W','여','남') M_SEX
+						,	A.M_EMAIL
+						,	DBO.GETCODENAME('COM044',A.M_GUBUN) M_GUBUN
+						,	A.M_HP
+						,	DBO.GETCODENAME('COM121',A.M_STA) M_STA
+						,	DBO.GETCODENAME('COM122',A.M_WAY) M_WAY
+						,	DBO.GETCODENAME('COM128',A.M_PATH) M_PATH
+						,	CONVERT(VARCHAR(10), A.REGDT, 120) REGDT_C
+						,	CONVERT(VARCHAR(10), A.MODDT, 120) MODDT_C
+						,	A.REGDT
+						,	ISNULL(A.MODDT, A.REGDT) MODDT
+						,	B.P_IDX
+						,	P_MAJOR
+						,	B.P_RATE
+						,	B.P_SEQ
+						,	DBO.FNDECODE(B.P_SHOW,'N','숨김','보임') P_SHOW
+						,	(CASE A.M_GUBUN WHEN '21' THEN (SELECT COUNT(*) FROM LECTURE_T WHERE MV_PROF = A.M_ID AND MV_STA = 'Y') ELSE '' END) LEC_CNT
+			FROM	  MEMBER_T A LEFT OUTER JOIN PROF_SUB B ON A.M_IDX = B.M_IDX
+			WHERE   1=1 AND M_STA <> '12'
+		]]>					
+			<if test="searchOp1 != null and !searchOp1.equals('')">
+				<![CDATA[	AND A.M_NAME LIKE '%' + #{searchOp1} + '%'	]]>
+			</if>
+			<if test="searchOp2 != null and !searchOp2.equals('')">
+				<![CDATA[	AND A.M_ID = #{searchOp2}	]]>
+			</if>
+			<if test='!searchOp3.equals("")'>
+				<![CDATA[ AND ISNULL(B.P_SHOW,'Y') = #{searchOp3} ]]>
+			</if>
+			<if test="searchActgubun != null and !searchActgubun.equals('')">
+				<![CDATA[	AND A.M_GUBUN = #{searchActgubun}	]]>
+			</if>
+			<if test="searchOp4 != null and !searchOp4.equals('')">
+				<![CDATA[	AND A.M_EMAIL LIKE '%' + #{searchOp4} + '%'	]]>
+			</if>
+			<if test="searchOp5 != null and !searchOp5.equals('')">
+				<![CDATA[	AND A.M_HP LIKE '%' + #{searchOp5} + '%'	]]>
+			</if>
+			<if test="searchOp6 != null and !searchOp6.equals('')">
+				<![CDATA[	AND (A.M_ADDR1 LIKE '%' + #{searchOp6} + '%' OR A.M_ADDR2 LIKE '%' + #{searchOp6} + '%')	]]>
+			</if>
+			<if test="searchOp7 != null and !searchOp7.equals('')">
+				<![CDATA[	AND A.M_ETC LIKE '%' + #{searchOp7} + '%'	]]>
+			</if>
+			<if test='!searchSdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) >= #{searchSdt} ]]>
+			</if>
+			<if test='!searchEdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) <= #{searchEdt} ]]>
+			</if>
+			<if test='!searchCnd2.equals("")'>
+				<![CDATA[ AND A.SMS_YN = 'Y' AND ISNULL(A.SMS_YN,'') <> '' ]]>
+			</if>
+			<if test='!searchCnd3.equals("")'>
+				<![CDATA[ AND A.EMAIL_YN = 'Y' AND ISNULL(A.EMAIL_YN,'') <> '' ]]>
+				<if test='!returnStt.equals("")'>
+					<![CDATA[ AND A.M_IDX IN(${returnStt}) ]]>
+				</if>
+			</if>
+				) ACT) ARR 
+			<if test="!pageView.equals('EXCEL')">
+				WHERE rn BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
+			</if>
+	</select>
+	
+	<select id="selectActMembListTotCnt" parameterType="ActManageSearchVO" resultType="int">
+		<![CDATA[
+			SELECT 	COUNT(*) totcnt
+			FROM	  MEMBER_T A LEFT OUTER JOIN PROF_SUB B ON A.M_IDX = B.M_IDX
+			WHERE   1=1 AND M_STA <> '12'
+		]]>					
+			<if test="searchOp1 != null and !searchOp1.equals('')">
+				<![CDATA[	AND A.M_NAME LIKE '%' + #{searchOp1} + '%'	]]>
+			</if>
+			<if test="searchOp2 != null and !searchOp2.equals('')">
+				<![CDATA[	AND A.M_ID = #{searchOp2}	]]>
+			</if>
+			<if test='!searchOp3.equals("")'>
+				<![CDATA[ AND ISNULL(B.P_SHOW,'Y') = #{searchOp3} ]]>
+			</if>
+			<if test="searchActgubun != null and !searchActgubun.equals('')">
+				<![CDATA[	AND A.M_GUBUN = #{searchActgubun}	]]>
+			</if>
+			<if test="searchOp4 != null and !searchOp4.equals('')">
+				<![CDATA[	AND A.M_EMAIL LIKE '%' + #{searchOp4} + '%'	]]>
+			</if>
+			<if test="searchOp5 != null and !searchOp5.equals('')">
+				<![CDATA[	AND A.M_HP LIKE '%' + #{searchOp5} + '%'	]]>
+			</if>
+			<if test="searchOp6 != null and !searchOp6.equals('')">
+				<![CDATA[	AND (A.M_ADDR1 LIKE '%' + #{searchOp6} + '%' OR A.M_ADDR2 LIKE '%' + #{searchOp6} + '%')	]]>
+			</if>
+			<if test="searchOp7 != null and !searchOp7.equals('')">
+				<![CDATA[	AND A.M_ETC LIKE '%' + #{searchOp7} + '%'	]]>
+			</if>
+			<if test='!searchSdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) >= #{searchSdt} ]]>
+			</if>
+			<if test='!searchEdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) <= #{searchEdt} ]]>
+			</if>
+			<if test='!searchCnd2.equals("")'>
+				<![CDATA[ AND A.SMS_YN = 'Y' AND ISNULL(A.SMS_YN,'') <> '' ]]>
+			</if>
+			<if test='!searchCnd3.equals("")'>
+				<![CDATA[ AND A.EMAIL_YN = 'Y' AND ISNULL(A.EMAIL_YN,'') <> '' ]]>
+			</if>
+	</select>
+
+
+	<select id="selectActMembExcelListTotCnt" parameterType="ActManageSearchVO" resultType="int">
+		<![CDATA[
+			SELECT 	COUNT(*) totcnt
+			FROM	  MEMBER_T A LEFT OUTER JOIN PROF_SUB B ON A.M_IDX = B.M_IDX
+			WHERE   1=1 AND M_STA <> '12'
+		]]>					
+			<if test="searchOp1 != null and !searchOp1.equals('')">
+				<![CDATA[	AND A.M_NAME LIKE '%' + #{searchOp1} + '%'	]]>
+			</if>
+			<if test="searchOp2 != null and !searchOp2.equals('')">
+				<![CDATA[	AND A.M_ID = #{searchOp2}	]]>
+			</if>
+			<if test='!searchOp3.equals("")'>
+				<![CDATA[ AND ISNULL(B.P_SHOW,'Y') = #{searchOp3} ]]>
+			</if>
+			<if test="searchActgubun != null and !searchActgubun.equals('')">
+				<![CDATA[	AND A.M_GUBUN = #{searchActgubun}	]]>
+			</if>
+			<if test="searchOp4 != null and !searchOp4.equals('')">
+				<![CDATA[	AND A.M_EMAIL LIKE '%' + #{searchOp4} + '%'	]]>
+			</if>
+			<if test="searchOp5 != null and !searchOp5.equals('')">
+				<![CDATA[	AND A.M_HP LIKE '%' + #{searchOp5} + '%'	]]>
+			</if>
+			<if test="searchOp6 != null and !searchOp6.equals('')">
+				<![CDATA[	AND (A.M_ADDR1 LIKE '%' + #{searchOp6} + '%' OR A.M_ADDR2 LIKE '%' + #{searchOp6} + '%')	]]>
+			</if>
+			<if test="searchOp7 != null and !searchOp7.equals('')">
+				<![CDATA[	AND A.M_ETC LIKE '%' + #{searchOp7} + '%'	]]>
+			</if>
+			<if test='!searchSdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) >= #{searchSdt} ]]>
+			</if>
+			<if test='!searchEdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) <= #{searchEdt} ]]>
+			</if>
+			<if test='!searchCnd2.equals("")'>
+				<![CDATA[ AND A.SMS_YN = 'Y' AND ISNULL(A.SMS_YN,'') <> '' ]]>
+			</if>
+			<if test='!searchCnd3.equals("")'>
+				<![CDATA[ AND A.EMAIL_YN = 'Y' AND ISNULL(A.EMAIL_YN,'') <> '' ]]>
+			</if>
+	</select>
+
+
+	<select id="selectActMembDetail" resultType="egovMap">
+		<![CDATA[		
+				SELECT 
+							A.M_IDX
+						,	A.M_GUBUN
+						,	A.M_ID
+						,	A.M_NAME
+						,	A.M_NICK
+						,	A.M_BIRTH
+						,	A.M_SEX
+						,	A.M_HP
+						,	A.M_TEL
+						,	A.M_EMAIL
+						,	A.M_ZIP
+						,	A.M_ADDR1
+						,	A.M_ADDR2
+						,	A.M_STA
+						,	A.M_WAY
+						,	A.M_PATH
+						,	A.M_EXAM
+						,	A.M_HOPE1
+						,	A.M_HOPE2
+						,	A.M_GRADE
+						,	A.M_SCHOOL
+						,	A.M_ETC
+						,	A.M_PIC AS THUM_ID
+						,	A.SMS_YN
+						,	A.EMAIL_YN
+						,	A.AGREE_YN
+						,	A.AUTH_TYPE
+						,	A.DUP_INFO
+						,	A.FAIL_CNT
+						,	A.SNS_SITE
+						,	A.NEW_LOG
+						,	A.REGDT
+						,	(SELECT MAX(insdate) FROM DAEBANG.dbo.mb_connect where id=A.M_ID) LAST_LOGIN
+						,	(SELECT count(*) FROM DAEBANG.dbo.mb_connect where id=A.M_ID) LOGIN_CNT
+						,	B.P_IDX
+						,	B.P_MAJOR
+						,	B.P_RATE
+						,	B.P_SEQ
+						,	B.P_SHOW
+						,	B.P_INTRO
+						,	B.P_BANNER AS FILEID
+						,	(CASE A.M_GUBUN WHEN '21' THEN (SELECT COUNT(*) FROM LECTURE_T WHERE MV_PROF = A.M_ID AND MV_STA = 'Y') ELSE '' END) LEC_CNT
+				FROM	MEMBER_T A LEFT OUTER JOIN PROF_SUB B ON A.M_IDX = B.M_IDX AND A.M_ID = B.M_ID
+				WHERE	A.M_IDX=#{mIdx} OR A.M_ID = #{mId}
+		]]>
+	</select>
+	
+	<update id="updateActMemb">
+			UPDATE MEMBER_T SET
+							M_GUBUN			= #{mGubun}
+						,	M_NAME			= #{mName}
+						,	M_NICK			= #{mNick}
+						,	M_BIRTH			= #{mBirth}
+						,	M_SEX				= #{mSex}
+						,	M_HP				= #{mHp}
+						,	M_TEL				= #{mTel}
+						,	M_EMAIL			= #{mEmail}
+						,	M_ZIP				= #{mZip}
+						,	M_ADDR1			= #{mAddr1}
+						,	M_ADDR2			= #{mAddr2}
+						,	M_WAY				= #{mWay}
+						<if test='!actListMode.equals("PROF")'>
+						,	M_PATH			= #{mPath}
+						,	M_EXAM			= #{mExam}
+						,	M_HOPE1			= #{mHope1}
+						,	M_HOPE2			= #{mHope2}
+						,	M_GRADE			= #{mGrade}
+						,	M_SCHOOL		= #{mSchool}
+						</if>
+						,	M_ETC				= #{mEtc}
+						,	M_PIC				= #{thumId}
+						,	SMS_YN			= #{smsYn}
+						,	EMAIL_YN			= #{emailYn}
+						,	MODDT 			= GETDATE()
+						,	MODID 				= #{modid}
+						<if test="mPass != null and !mPass.equals('')">
+						,	M_PASS			= #{mPass}
+						</if>
+			WHERE M_IDX = #{mIdx}
+	</update>
+	
+	<update id="updateProfSeq">
+			UPDATE PROF_SUB SET
+						P_SEQ = #{pSeq}
+			WHERE M_IDX = #{mIdx}
+	</update>
+	
+    <insert id="insertActProfSub">
+        <![CDATA[
+        	MERGE PROF_SUB AS A
+	        	USING (SELECT #{mIdx} AS M_IDX, #{pIdx} AS P_IDX, #{mId} AS M_ID) AS B
+		        	ON (A.M_IDX = B.M_IDX AND A.P_IDX = B.P_IDX AND A.M_ID = B.M_ID)
+	        	WHEN MATCHED THEN
+		        	UPDATE SET P_MAJOR = #{pMajor}, P_RATE = DBO.FNDECODE(#{pRate},'',NULL,#{pRate}), P_SEQ = #{pSeq}, P_SHOW = #{pShow}, P_INTRO = #{pIntro}, P_BANNER = #{fileid}, MODDT = GETDATE()
+	        	WHEN NOT MATCHED THEN
+		        	INSERT (P_IDX, M_IDX, M_ID, P_MAJOR, P_RATE, P_SEQ, P_SHOW, P_INTRO, P_BANNER, P_PIC, REGDT)
+		        	VALUES ((SELECT ISNULL(MAX(P_IDX),0)+1 FROM  PROF_SUB), #{mIdx}, #{mId}, #{pMajor}, DBO.FNDECODE(#{pRate},'',NULL,#{pRate}), #{pSeq}, #{pShow}, #{pIntro}, #{fileid}, #{pPic}, GETDATE())
+		        	;
+        ]]>
+    </insert>
+    
+	<delete id="deleteActMemb">
+		BEGIN TRAN
+            INSERT INTO MEMBER_DEL
+                (
+                			D_IDX
+						,	M_IDX
+						,	D_ID
+						,	D_NICK
+						,	D_STA
+						,	DEL_YN
+						,	DELDT
+				)
+            VALUES (
+					DBO.FNDECODE('','',(SELECT ISNULL(A.D_IDX,0)+1 FROM (SELECT MAX(D_IDX) D_IDX FROM  MEMBER_DEL) A),'')
+					,	#{mIdx}
+					,	(SELECT M_ID FROM MEMBER_T WHERE M_IDX = #{mIdx})
+					,	(SELECT M_NICK FROM MEMBER_T WHERE M_IDX = #{mIdx})
+					,	#{dSta}
+					,	'N'
+					,	GETDATE()
+				);
+			
+			UPDATE MEMBER_T SET
+							M_STA				= '12'
+						,	MODDT 			= GETDATE()
+						,	MODID 				= #{modid}
+			WHERE M_IDX = #{mIdx};
+		COMMIT TRAN;
+	</delete>
+	<delete id="cancelDelActMemb">
+		BEGIN TRAN
+            DELETE FROM MEMBER_DEL WHERE D_IDX = #{dIdx} AND D_ID = #{dId};
+			
+			UPDATE MEMBER_T SET
+							M_STA				= '11'
+						,	MODDT 			= GETDATE()
+						,	MODID 				= #{modid}
+			WHERE M_IDX = #{mIdx} AND M_ID = #{dId};
+		COMMIT TRAN;
+	</delete>
+	<delete id="withdrawActMembInfo">
+		BEGIN TRAN
+			
+			UPDATE MEMBER_DEL SET
+							DEL_YN				= 'Y'
+			WHERE D_IDX = #{dIdx} AND D_ID = #{dId};
+			
+			DELETE FROM MEMBER_T WHERE AUTH_TYPE IN('naver','kakao') AND M_IDX = #{mIdx} AND M_ID = #{dId};
+			
+			UPDATE MEMBER_T SET
+							M_BIRTH			= ''
+						,	M_SEX				= ''
+						,	M_HP				= ''
+						,	M_TEL				= ''
+						,	M_EMAIL			= ''
+						,	M_ZIP				= ''
+						,	M_ADDR1			= ''
+						,	M_ADDR2			= ''
+						,	M_STA				= '12'
+						,	M_WAY				= ''
+						,	M_PATH			= ''
+						,	M_EXAM			= ''
+						,	M_HOPE1			= ''
+						,	M_HOPE2			= ''
+						,	M_GRADE			= ''
+						,	M_SCHOOL		= ''
+						,	M_ETC				= ''
+						,	M_PIC				= ''
+						,	SMS_YN			= ''
+						,	EMAIL_YN			= ''
+						,	AGREE_YN		= ''
+						,	AUTH_TYPE		= ''
+						,	DUP_INFO			= ''
+						,	SNS_SITE			= ''
+						,	REGDT	 			= ''
+						,	REGID 				= ''
+						,	MODDT 			= ''
+						,	MODID 				= ''
+			WHERE M_IDX = #{mIdx} AND M_ID = #{dId};
+		COMMIT TRAN;
+	</delete>
+	<update id="delMemoActMembInfo">
+		BEGIN TRAN
+			UPDATE MEMBER_DEL SET
+							ETC					= #{etc}
+			WHERE D_IDX = #{dIdx};
+		COMMIT TRAN;
+	</update>
+	<insert id="insertActMemb">
+            INSERT INTO MEMBER_T
+                (
+                		M_IDX
+						, M_GUBUN
+						, M_ID
+						, M_NAME
+						, M_NICK
+						, M_PASS
+						, M_BIRTH
+						, M_SEX
+						, M_HP
+						, M_TEL
+						, M_EMAIL
+						, M_ZIP
+						, M_ADDR1
+						, M_ADDR2
+						, M_STA
+						, M_WAY
+						, M_PATH
+						, M_EXAM
+						, M_HOPE1
+						, M_HOPE2
+						, M_GRADE
+						, M_SCHOOL
+						, M_PIC
+						, SMS_YN
+						, EMAIL_YN
+						, AGREE_YN
+						, AUTH_TYPE
+						, DUP_INFO
+						, SNS_SITE
+						, NEW_LOG
+						, REGDT
+						, REGID
+				)
+            VALUES (
+					DBO.FNDECODE(#{mIdx},'',(SELECT ISNULL(A.M_IDX,0)+1 FROM (SELECT MAX(M_IDX) M_IDX FROM  MEMBER_T) A),#{mIdx})
+					,	#{mGubun}
+					,	#{mId}
+					,	#{mName}
+					,	#{mNick}
+					,	#{mPass}
+					,	#{mBirth}
+					,	#{mSex}
+					,	#{mHp}
+					,	#{mTel}
+					,	#{mEmail}
+					,	#{mZip}
+					,	#{mAddr1}
+					,	#{mAddr2}
+					,	#{mSta}
+					,	#{mWay}
+					,	#{mPath}
+					,	#{mExam}
+					,	#{mHope1}
+					,	#{mHope2}
+					,	#{mGrade}
+					,	#{mSchool}
+					,	#{mPic}
+					,	#{smsYn}
+					,	#{emailYn}
+					,	#{agreeYn}
+					,	#{authType}
+					,	#{dupInfo}
+					,	#{snsSite}
+					,	GETDATE()
+					,	GETDATE()
+					,	#{mId}
+				)
+    </insert>
+    
+ 	<select id="selectActEquipList" parameterType="ActManageSearchVO" resultType="egovMap">
+        <![CDATA[
+			SELECT A.* FROM (
+				SELECT 
+						sno
+					,	idno				M_ID
+					,	pid
+					,	ssn
+					,	alias
+					,	rdat
+					,	1					seq
+				FROM	DAEBANG.dbo.playerid
+				WHERE   idno = #{mId}
+				UNION ALL
+				SELECT
+						sno
+					,	user_id			M_ID
+					,	device_id		PID
+					,	''					ssn
+					,	'모바일'			alias
+					,	convert(smalldatetime,stuff(stuff(stuff([date], 9, 0, ' '), 12, 0, ':'), 15, 0, ':')) rdat
+					,	2					seq
+				FROM	Mobile.dbo.Register_Device_ID
+				WHERE user_id = #{mId} AND  REPLACE([date],' ','') <> ''
+			) A ORDER BY seq, rdat desc
+		]]>
+	</select>
+	
+	<delete id="deleteActEquip1">
+		DELETE DAEBANG.dbo.playerid WHERE idno=#{searchOp1} AND pid = #{searchOp2}
+	</delete>
+	<delete id="deleteActEquip2">
+		DELETE Mobile.dbo.Register_Device_ID WHERE user_id=#{searchOp1} AND sno = #{searchOp3}
+	</delete>
+
+	<select id="selectActMembDelList" parameterType="ActManageSearchVO" resultType="egovMap">
+			SELECT *	FROM (SELECT ROW_NUMBER() OVER( ORDER BY DELDT DESC) 
+				rn, ACT.*
+			<![CDATA[
+						FROM
+				(SELECT 
+							B.M_ID
+						,	B.M_NAME
+						,	DBO.FNDECODE(B.M_SEX,'W','여','남') M_SEX
+						,	DBO.GETCODENAME('COM044',B.M_GUBUN) M_GUBUN
+						,	DBO.GETCODENAME('COM121',B.M_STA) M_STA
+						,	A.D_IDX
+						,	A.M_IDX
+						,	A.D_ID
+						,	A.D_STA
+						,	A.ETC
+						,	A.DEL_YN
+						,	A.DELDT
+			FROM	  MEMBER_DEL A LEFT OUTER JOIN MEMBER_T B ON A.D_ID = B.M_ID
+			WHERE   B.M_STA='12'
+		]]>					
+			<if test="searchWrd != null and !searchWrd.equals('')">
+				<if test='searchCnd.equals("all")'>
+				<![CDATA[	AND (B.M_NAME LIKE '%' + #{searchWrd} + '%' OR B.M_ID LIKE '%' + #{searchWrd} + '%')	]]>
+				</if>
+				<if test='searchCnd.equals("name")'>
+				<![CDATA[	AND B.M_NAME LIKE '%' + #{searchWrd} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("id")'>
+				<![CDATA[	AND B.M_ID = #{searchWrd}	]]>
+				</if>
+			</if>
+			<if test="searchOp2 != null and !searchOp2.equals('')">
+				<![CDATA[	AND A.ETC LIKE '%' + #{searchOp2} + '%'	]]>
+			</if>
+			<if test='!searchSdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.DELDT,120) >= #{searchSdt} ]]>
+			</if>
+			<if test='!searchEdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.DELDT,120) <= #{searchEdt} ]]>
+			</if>
+				) ACT) ARR 
+				WHERE rn BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
+	</select>
+	
+	<select id="selectActMembDelListTotCnt" parameterType="ActManageSearchVO" resultType="int">
+		<![CDATA[
+			SELECT 	COUNT(*) totcnt
+			FROM	  MEMBER_DEL A LEFT OUTER JOIN MEMBER_T B ON A.D_ID = B.M_ID
+			WHERE   B.M_STA='12'
+		]]>					
+			<if test="searchWrd != null and !searchWrd.equals('')">
+				<if test='searchCnd.equals("all")'>
+				<![CDATA[	AND (B.M_NAME LIKE '%' + #{searchWrd} + '%' OR B.M_ID LIKE '%' + #{searchWrd} + '%')	]]>
+				</if>
+				<if test='searchCnd.equals("name")'>
+				<![CDATA[	AND B.M_NAME LIKE '%' + #{searchWrd} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("id")'>
+				<![CDATA[	AND B.M_ID = #{searchWrd}	]]>
+				</if>
+			</if>
+			<if test="searchOp2 != null and !searchOp2.equals('')">
+				<![CDATA[	AND A.ETC LIKE '%' + #{searchOp2} + '%'	]]>
+			</if>
+			<if test='!searchSdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.DELDT,120) >= #{searchSdt} ]]>
+			</if>
+			<if test='!searchEdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.DELDT,120) <= #{searchEdt} ]]>
+			</if>
+	</select>
+
+ 	<select id="selectActMemTotCnt" parameterType="ActManageSearchVO" resultType="egovMap">
+        <![CDATA[
+        SELECT COUNT(M_IDX) AS TOTAL
+        	, SUM(CASE WHEN M_SEX='W' THEN 1 ELSE 0 END) AS TOTAL_WOMAN
+        	, SUM(CASE WHEN M_SEX <> 'W' THEN 1 ELSE 0 END) AS TOTAL_MAN
+		FROM	  MEMBER_T A
+		]]>
+	</select>
+	
+ 	<select id="selectActMemLoginTotCnt" parameterType="ActManageSearchVO" resultType="egovMap">
+        <![CDATA[
+		SELECT COUNT(idx) AS total_login
+			, (SELECT SUM(1)
+				 FROM DAEBANG.dbo.mb_connect
+				WHERE 1=1
+				  AND insdate >= convert(DATETIME, CONVERT(VARCHAR(10), GETDATE(), 112))
+				  AND insdate < convert(DATETIME, CONVERT(VARCHAR(10), GETDATE()+1, 112))
+			  ) AS total_today
+		FROM DAEBANG.dbo.mb_connect 
+		]]>
+	</select>
+	
+ 	<select id="selectActMemCondTotCnt" parameterType="ActManageSearchVO" resultType="egovMap">
+        <![CDATA[
+        SELECT COUNT(M_ID) AS COND
+        	, SUM(woman) AS COND_WOMAN
+        	, SUM(man) AS COND_MAN
+        	, SUM(today) AS COND_TODAY
+        	, SUM(login) AS COND_LOGIN
+        FROM (
+			SELECT M_ID, CASE WHEN MAX(M_SEX)='W' THEN 1 ELSE 0 END AS woman, CASE WHEN MAX(M_SEX)='W' THEN 0 ELSE 1 END AS man 
+			, SUM(CASE WHEN CONVERT(VARCHAR(10), insdate, 120) = CONVERT(VARCHAR(10), getdate(), 120) THEN 1 ELSE 0 END) AS today 
+			, COUNT(idx) AS login 
+			FROM MEMBER_T A LEFT OUTER JOIN DAEBANG.dbo.mb_connect B ON B.id=A.M_ID WHERE 1=1 
+		]]>
+			<if test="searchOp1 != null and !searchOp1.equals('')">
+				<![CDATA[	AND A.M_NAME LIKE '%' + #{searchOp1} + '%'	]]>
+			</if>
+			<if test="searchOp2 != null and !searchOp2.equals('')">
+				<![CDATA[	AND A.M_ID = #{searchOp2}	]]>
+			</if>
+			<if test="searchActgubun != null and !searchActgubun.equals('')">
+				<![CDATA[	AND A.M_GUBUN = #{searchActgubun}	]]>
+			</if>
+			<if test="searchOp4 != null and !searchOp4.equals('')">
+				<![CDATA[	AND A.M_EMAIL LIKE '%' + #{searchOp4} + '%'	]]>
+			</if>
+			<if test="searchOp5 != null and !searchOp5.equals('')">
+				<![CDATA[	AND A.M_HP LIKE '%' + #{searchOp5} + '%'	]]>
+			</if>
+			<if test="searchOp6 != null and !searchOp6.equals('')">
+				<![CDATA[	AND (A.M_ADDR1 LIKE '%' + #{searchOp6} + '%' OR A.M_ADDR2 LIKE '%' + #{searchOp6} + '%')	]]>
+			</if>
+			<if test='!searchSdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) >= #{searchSdt} ]]>
+			</if>
+			<if test='!searchEdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) <= #{searchEdt} ]]>
+			</if>
+			GROUP BY M_ID
+		) t
+	</select>
+	
+
+</mapper>

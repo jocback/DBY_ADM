@@ -1,0 +1,441 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ActMovingManage">
+
+	<select id="selectActMovingList" parameterType="ActManageSearchVO" resultType="egovMap">
+		<![CDATA[
+			SELECT  *
+			FROM
+			(SELECT  ROW_NUMBER() OVER(ORDER BY ACT.REGDT DESC, ACT.MV_SUBJECT ASC) RNUM,ACT.*
+						FROM
+				(SELECT
+							A.MV_IDX
+						,	A.CL_CODE
+						,	DBO.GETLECNAME(A.CL_CODE) CL_CODE_NM
+						,	A.MV_SUBJECT
+						,	A.MV_PROF
+						,	(SELECT M_NAME FROM MEMBER_T WHERE M_ID = A.MV_PROF) MV_PROF_NM
+						,	A.MV_OP1
+						,	A.MV_OP2
+						,	A.MV_OP3
+						,	A.MV_STA
+						,	A.MV_OPEN
+						,	DBO.GETCODENAME('COM051',A.MV_OPEN) MV_OPEN_NM
+						,	A.MV_PERIOD
+						,	A.MV_QNA
+						,	A.MV_MNG
+						,	A.MV_PCMO
+						,	DBO.GETCODENAME('COM052',A.MV_PCMO) MV_PCMO_NM
+						,	A.MV_CLOSE
+						,	A.MV_PRICE1
+						,	A.MV_PRICE2
+						,	A.MV_PRICE3
+						,	A.MV_CHARGE
+						,	A.MV_BOOK
+						,	A.MV_PRINT
+						,	A.MV_DESC
+						,	A.MV_MSGYN1
+						,	A.MV_MSG1
+						,	A.MV_MSGYN2
+						,	A.MV_MSG2
+						,	A.MV_ETC
+						,	A.REGDT
+						,	A.REGID
+						,	A.MODDT
+						,	A.MODID
+						,	(SELECT COUNT(*) FROM LECTURE_CLIP WHERE MV_IDX = A.MV_IDX AND ISNULL(CP_SMP,'') = '' AND DELDT IS NULL) CLIP_CNT
+			FROM	  LECTURE_T A
+			WHERE   1=1 AND MV_STA <> 'D'
+		]]>					
+			<if test='!searchOp1.equals("")'>
+				<![CDATA[ AND A.CL_CODE = #{searchOp1} ]]>
+			</if>
+			<if test='!searchOp2.equals("")'>
+				<![CDATA[ AND ISNULL(A.MV_STA,'Y') = #{searchOp2} ]]>
+			</if>
+			<if test='!searchOp3.equals("")'>
+				<![CDATA[ AND ISNULL(A.MV_PRICE1,'0') >= #{searchOp3} ]]>
+			</if>
+			<if test='!searchOp4.equals("")'>
+				<![CDATA[ AND ISNULL(A.MV_PRICE1,'0') <= #{searchOp4} ]]>
+			</if>
+			<if test='!searchSdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) >= #{searchSdt} ]]>
+			</if>
+			<if test='!searchEdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) <= #{searchEdt} ]]>
+			</if>
+			<if test="searchKeyword != null and !searchKeyword.equals('')">
+				<if test='searchCnd.equals("0")'>
+				<![CDATA[ AND (A.MV_SUBJECT LIKE '%' + #{searchKeyword} + '%' OR A.MV_PROF IN(SELECT M_ID FROM MEMBER_T WHERE M_GUBUN = '21' AND M_NAME LIKE '%' + #{searchKeyword} + '%')) ]]>
+				</if>
+				<if test='searchCnd.equals("1")'>
+				<![CDATA[ AND A.MV_SUBJECT LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("2")'>
+				<![CDATA[ AND A.MV_PROF IN(SELECT M_ID FROM MEMBER_T WHERE M_GUBUN = '21' AND M_NAME LIKE '%' + #{searchKeyword} + '%')	]]>
+				</if>
+				<if test='searchCnd.equals("3")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.MODDT,120) LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+			</if>
+			<![CDATA[	) ACT) AAA	WHERE RNUM  BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}		]]>			
+	</select>
+	
+	<select id="selectActMovingListTotCnt" parameterType="ActManageSearchVO" resultType="int">
+		<![CDATA[
+			SELECT 	COUNT(*) totcnt
+			FROM	  LECTURE_T A
+			WHERE   1=1 AND MV_STA <> 'D'
+		]]>
+			<if test='!searchOp1.equals("")'>
+				<![CDATA[ AND A.CL_CODE = #{searchOp1} ]]>
+			</if>
+			<if test='!searchOp2.equals("")'>
+				<![CDATA[ AND ISNULL(A.MV_STA,'Y') = #{searchOp2} ]]>
+			</if>
+			<if test='!searchOp3.equals("")'>
+				<![CDATA[ AND ISNULL(A.MV_PRICE1,'0') >= #{searchOp3} ]]>
+			</if>
+			<if test='!searchOp4.equals("")'>
+				<![CDATA[ AND ISNULL(A.MV_PRICE1,'0') <= #{searchOp4} ]]>
+			</if>
+			<if test='!searchSdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) >= #{searchSdt} ]]>
+			</if>
+			<if test='!searchEdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) <= #{searchEdt} ]]>
+			</if>
+			<if test="searchKeyword != null and !searchKeyword.equals('')">
+				<if test='searchCnd.equals("0")'>
+				<![CDATA[ AND (A.MV_SUBJECT LIKE '%' + #{searchKeyword} + '%' OR A.MV_PROF IN(SELECT M_ID FROM MEMBER_T WHERE M_GUBUN = '21' AND M_NAME LIKE '%' + #{searchKeyword} + '%')) ]]>
+				</if>
+				<if test='searchCnd.equals("1")'>
+				<![CDATA[ AND A.MV_SUBJECT LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("2")'>
+				<![CDATA[ AND A.MV_PROF IN(SELECT M_ID FROM MEMBER_T WHERE M_GUBUN = '21' AND M_NAME LIKE '%' + #{searchKeyword} + '%')	]]>
+				</if>
+				<if test='searchCnd.equals("3")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.MODDT,120) LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+			</if>
+	</select>
+	
+	<select id="selectActMovingDetail" resultType="egovMap">
+		<![CDATA[		
+				SELECT
+							A.MV_IDX
+						,	A.CL_CODE
+						,	A.MV_SUBJECT
+						,	A.MV_PROF
+						,	A.MV_OP1
+						,	A.MV_OP2
+						,	A.MV_OP3
+						,	A.MV_STA
+						,	A.MV_OPEN
+						,	A.MV_PERIOD
+						,	A.MV_QNA
+						,	A.MV_MNG
+						,	A.MV_PCMO
+						,	A.MV_CLOSE
+						,	A.MV_PRICE1
+						,	A.MV_PRICE2
+						,	A.MV_PRICE3
+						,	A.MV_CHARGE
+						,	A.MV_BOOK
+						,	A.MV_PRINT
+						,	A.MV_DESC
+						,	A.MV_MSGYN1
+						,	A.MV_MSG1
+						,	A.MV_MSGYN2
+						,	A.MV_MSG2
+						,	A.MV_ETC
+						,	A.REGDT
+						,	A.REGID
+						,	A.MODDT
+						,	A.MODID
+			FROM	  LECTURE_T A
+			WHERE   A.MV_IDX = #{mvIdx}
+		]]>
+	</select>
+	
+	<select id="selectActMovingType" parameterType="ActManageSearchVO" resultType="egovMap">
+		<![CDATA[
+			SELECT  *
+			FROM
+			(SELECT  ROW_NUMBER() OVER(ORDER BY ACT.REGDT DESC, ACT.CODE_NM ASC) RNUM,ACT.*
+						FROM
+				(SELECT
+							A.MV_IDX AS CODE
+						,	A.CL_CODE 
+						,	A.MV_SUBJECT AS CODE_NM
+						,	A.MV_PROF
+						,	A.REGDT
+			FROM	  LECTURE_T A
+			WHERE   1=1 AND MV_STA <> 'D' AND ISNULL(MV_CLOSE,'N') <> 'Y'
+		]]>					
+			<if test='!searchOp5.equals("")'>
+				<![CDATA[ AND MV_PROF = #{searchOp5} ]]>
+			</if>
+			<if test='!searchOp1.equals("")'>
+				<![CDATA[ AND A.CL_CODE = #{searchOp1} ]]>
+			</if>
+			<if test='!searchOp2.equals("")'>
+				<![CDATA[ AND ISNULL(A.MV_STA,'Y') = #{searchOp2} ]]>
+			</if>
+			<if test='!searchOp3.equals("")'>
+				<![CDATA[ AND ISNULL(A.MV_OP1,'N') = #{searchOp3} ]]>
+			</if>
+			<if test='!searchSdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) >= #{searchSdt} ]]>
+			</if>
+			<if test='!searchEdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) <= #{searchEdt} ]]>
+			</if>
+			<if test="searchKeyword != null and !searchKeyword.equals('')">
+				<if test='searchCnd.equals("0")'>
+				<![CDATA[ AND (A.MV_SUBJECT LIKE '%' + #{searchKeyword} + '%' OR A.MV_PROF IN(SELECT M_ID FROM MEMBER_T WHERE M_GUBUN = '21' AND M_NAME LIKE '%' + #{searchKeyword} + '%')) ]]>
+				</if>
+				<if test='searchCnd.equals("1")'>
+				<![CDATA[ AND A.MV_SUBJECT LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("2")'>
+				<![CDATA[ AND A.MV_PROF IN(SELECT M_ID FROM MEMBER_T WHERE M_GUBUN = '21' AND M_NAME LIKE '%' + #{searchKeyword} + '%')	]]>
+				</if>
+			</if>
+			<![CDATA[	) ACT) AAA ]]>			
+	</select>
+	
+	<select id="selectActMovingMaxIdx" resultType="String">
+		<![CDATA[
+			SELECT ISNULL(MAX(MV_IDX),0)+1 FROM LECTURE_T
+		]]>
+	</select>
+	
+    <insert id="insertActMoving">
+        <![CDATA[
+            INSERT INTO LECTURE_T 
+                (	MV_IDX
+				,	CL_CODE
+				,	MV_SUBJECT
+				,	MV_PROF
+				,	MV_OP1
+				,	MV_OP2
+				,	MV_OP3
+				,	MV_STA
+				,	MV_OPEN
+				,	MV_PERIOD
+				,	MV_QNA
+				,	MV_MNG
+				,	MV_PCMO
+				,	MV_CLOSE
+				,	MV_PRICE1
+				,	MV_PRICE2
+				,	MV_PRICE3
+				,	MV_CHARGE
+				,	MV_BOOK
+				,	MV_PRINT
+				,	MV_DESC
+				,	MV_MSGYN1
+				,	MV_MSG1
+				,	MV_MSGYN2
+				,	MV_MSG2
+				,	MV_ETC
+				,	REGDT
+				,	REGID
+				)
+            VALUES (
+					#{mvIdx}
+				,	#{clCode}
+				,	#{mvSubject}
+				,	#{mvProf}
+				,	#{mvOp1}
+				,	#{mvOp2}
+				,	#{mvOp3}
+				,	#{mvSta}
+				,	#{mvOpen}
+				,	#{mvPeriod}
+				,	#{mvQna}
+				,	#{mvMng}
+				,	#{mvPcmo}
+				,	#{mvClose}
+				,	#{mvPrice1}
+				,	#{mvPrice2}
+				,	#{mvPrice3}
+				,	#{mvCharge}
+				,	#{mvBook}
+				,	#{mvPrint}
+				,	#{mvDesc}
+				,	#{mvMsgyn1}
+				,	#{mvMsg1}
+				,	#{mvMsgyn2}
+				,	#{mvMsg2}
+				,	#{mvEtc}
+				,	GETDATE()
+				,	#{regid}
+				);
+        ]]>
+    </insert>
+    
+	<update id="updateActMoving">
+			UPDATE LECTURE_T SET
+						CL_CODE			= #{clCode}
+					,	MV_SUBJECT	= #{mvSubject}
+					,	MV_PROF			= #{mvProf}
+					,	MV_OP1			= #{mvOp1}
+					,	MV_OP2			= #{mvOp2}
+					,	MV_OP3			= #{mvOp3}
+					,	MV_STA			= #{mvSta}
+					,	MV_OPEN			= #{mvOpen}
+					,	MV_PERIOD		= #{mvPeriod}
+					,	MV_QNA			= #{mvQna}
+					,	MV_MNG			= #{mvMng}
+					,	MV_PCMO			= #{mvPcmo}
+					,	MV_CLOSE		= #{mvClose}
+					,	MV_PRICE1		= DBO.FNDECODE(#{mvPrice1},'',NULL,#{mvPrice1})
+					,	MV_PRICE2		= DBO.FNDECODE(#{mvPrice2},'',NULL,#{mvPrice2})
+					,	MV_PRICE3		= DBO.FNDECODE(#{mvPrice3},'',NULL,#{mvPrice3})
+					,	MV_CHARGE		= DBO.FNDECODE(#{mvCharge},'',NULL,#{mvCharge})
+					,	MV_BOOK			= #{mvBook}
+					,	MV_PRINT			= #{mvPrint}
+					,	MV_DESC			= #{mvDesc}
+					,	MV_MSGYN1		= #{mvMsgyn1}
+					,	MV_MSG1			= #{mvMsg1}
+					,	MV_MSGYN2		= #{mvMsgyn2}
+					,	MV_MSG2			= #{mvMsg2}
+					,	MV_ETC			= #{mvEtc}
+					,	MODDT				= GETDATE()
+					,	MODID				= #{modid}
+			WHERE MV_IDX = #{mvIdx}
+	</update>
+	
+    <insert id="deleteActMoving">
+			UPDATE LECTURE_T SET
+					MV_STA	= 'D'
+				,	MODDT		= GETDATE()
+				,	MODID		= #{modid}
+			WHERE MV_IDX = #{mvIdx}
+    </insert>
+    
+    <insert id="insertActLectureClip">
+        <![CDATA[
+        	MERGE LECTURE_CLIP AS A
+	        	USING (SELECT #{cpIdx} AS CP_IDX, #{mvIdx} AS MV_IDX) AS B
+		        	ON (A.CP_IDX = B.CP_IDX AND A.MV_IDX = B.MV_IDX)
+	        	WHEN MATCHED THEN
+					UPDATE SET
+								CP_SEQ			= #{cpSeq}
+							,	CP_SMP			= #{cpSmp}
+							,	CP_TITLE			= #{cpTitle}
+							,	CP_URL				= #{cpUrl}
+							,	CP_UTB			= #{cpUtb}
+							,	CP_TIME			= #{cpTime}
+							,	MODDT				= GETDATE()
+							,	MODID				= #{modid}
+	        	WHEN NOT MATCHED THEN
+		            INSERT (CP_IDX ,MV_IDX ,CP_SEQ ,CP_SMP ,CP_TITLE ,CP_URL ,CP_UTB ,CP_TIME ,REGDT ,REGID)
+		            VALUES ((SELECT ISNULL(MAX(CP_IDX),0)+1 FROM  LECTURE_CLIP)
+								,#{mvIdx} ,#{cpSeq} ,#{cpSmp} ,#{cpTitle} ,#{cpUrl} ,	#{cpUtb} ,#{cpTime} ,GETDATE() ,#{regid})
+					;
+        ]]>
+    </insert>
+    <insert id="insertActLectureBook">
+        <![CDATA[
+        	MERGE LECTURE_BOOK AS A
+	        	USING (SELECT #{bmIdx} AS BM_IDX, #{mvIdx} AS MV_IDX) AS B
+		        	ON (A.BM_IDX = B.BM_IDX AND A.MV_IDX = B.MV_IDX)
+	        	WHEN MATCHED THEN
+		        	UPDATE SET DELDT = NULL, DELID = NULL
+	        	WHEN NOT MATCHED THEN
+		        	INSERT (BK_IDX, MV_IDX, BM_IDX, REGDT, REGID)
+		        	VALUES ((SELECT ISNULL(MAX(BK_IDX),0)+1 FROM  LECTURE_BOOK), #{mvIdx}, #{bmIdx}, GETDATE(), #{regid})
+		        	;
+        ]]>
+    </insert>
+    
+    <!-- 해당강좌교재리스트 일괄삭제 -->
+    <insert id="deleteActLectureBook">
+			UPDATE LECTURE_BOOK SET
+					DELDT		= GETDATE()
+				,	DELID		= #{modid}
+			WHERE MV_IDX = #{mvIdx}
+    </insert>
+    <insert id="deleteActLectureClip">
+			UPDATE LECTURE_CLIP SET
+					DELDT		= GETDATE()
+				,	DELID		= #{modid}
+			WHERE CP_IDX = #{cpIdx}
+    </insert>
+    
+	<select id="selectActLectureBook" resultType="egovMap">
+		<![CDATA[
+			SELECT
+					A.BK_IDX
+				,	A.MV_IDX
+				,	A.BM_IDX
+				,	B.BM_SUBJECT
+				,	B.BM_PRESS
+				,	B.BM_PRICE1
+				,	B.BM_PRICE2
+				,	B.REGDT
+			FROM	  LECTURE_BOOK A, BOOK_MA B 
+			WHERE   A.BM_IDX = B.BM_IDX AND A.MV_IDX = #{mvIdx} AND A.DELDT IS NULL
+			ORDER BY BK_IDX
+		]]>					
+	</select>
+
+	<select id="selectActLectureClip" resultType="egovMap">
+			SELECT
+					A.CP_IDX
+				,	A.MV_IDX
+				,	A.CP_SEQ
+				,	A.CP_SMP
+				,	A.CP_TITLE
+				,	A.CP_URL
+				,	A.CP_UTB
+				,	A.CP_TIME
+				<if test="orderSno != null and !orderSno.equals('')">
+				<if test='mobileYn != null and !mobileYn.equals("Y")'>
+				,	(CASE WHEN B.play_time > A.CP_TIME THEN '100' ELSE
+					ISNULL(B.PLAY_RATE,0) END) PLAY_RATE
+				,	(CASE WHEN B.play_time > A.CP_TIME THEN A.CP_TIME ELSE
+					ISNULL(B.play_time,0) END) PLAY_TIME
+				</if>
+				<if test='mobileYn != null and mobileYn.equals("Y")'>
+				, (CASE B.play_type WHEN 'download' THEN '100' ELSE ISNULL(ROUND(CAST(CAST(B.play_time AS FLOAT)/CAST(A.CP_TIME AS FLOAT)*100 AS DECIMAL),2),0)
+					END) PLAY_RATE
+				, (CASE B.play_type WHEN 'download' THEN A.CP_TIME ELSE ISNULL(B.play_time,0)
+					END) PLAY_TIME
+				</if>
+				,	CONVERT(VARCHAR(10),B.end_date,120) END_DATE
+				,	B.end_date END_TIME
+				</if>
+			FROM	  LECTURE_CLIP A
+			<if test="orderSno != null and !orderSno.equals('')">
+				<if test='mobileYn != null and !mobileYn.equals("Y")'>
+				LEFT OUTER JOIN DAEBANG.dbo.lecture_movie_study B ON B.lecture_sno = A.MV_IDX AND B.movie_sno = A.CP_IDX AND #{orderSno}=B.order_sno
+					<if test='orderSno.equals("0")'> AND fm_idx = #{fmIdx}</if>
+				</if>
+				<if test='mobileYn != null and mobileYn.equals("Y")'>
+				LEFT OUTER JOIN (SELECT 
+					(CONVERT(DATETIME,SUBSTRING(date,1,8) + ' ' + SUBSTRING(date,9,2) + ':' + SUBSTRING(date,11,2) + ':' +SUBSTRING(date,13,2))) end_date,
+					(play_time/60) play_time,
+					play_type,
+					content_id
+				 FROM Mobile.dbo.Playing_Content WHERE user_id=#{ID}) B ON B.content_id=A.CP_IDX 
+					<if test='orderSno.equals("0")'></if>
+				</if>
+			</if>
+			WHERE   MV_IDX = #{mvIdx} AND DELDT IS NULL
+				<if test="cpSmp != null and !cpSmp.equals('')">
+				AND ISNULL(A.CP_SMP,'') IN('Y','T','F')
+				</if>
+				<if test="cpSmp == null or cpSmp.equals('')">
+				AND ISNULL(A.CP_SMP,'') = ''
+				</if>
+			ORDER BY CP_SEQ
+	</select>
+	
+</mapper>

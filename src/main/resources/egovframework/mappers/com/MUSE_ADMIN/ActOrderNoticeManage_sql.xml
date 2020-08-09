@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ActOrderNoticeManage">
+
+	<select id="selectActOrderNoticeDetail" resultType="egovMap">
+		<![CDATA[		
+				SELECT
+							A.FQ_IDX
+						,	A.FQ_SJ
+						,	A.FQ_CN
+						,	A.FQ_CN2
+						,	A.FQ_GB
+			FROM	  FAQ_T A
+			WHERE   A.FQ_GB = #{fqGb}
+		]]>
+	</select>
+	
+    <insert id="updateActOrderNotice">
+        	MERGE FAQ_T AS A
+	        	USING (SELECT #{fqGb} AS FQ_GB) AS B
+		        	ON (A.FQ_GB = B.FQ_GB)
+	        	WHEN MATCHED THEN
+					UPDATE SET
+								FQ_SJ			= #{fqSj}
+							,	FQ_CN			= #{fqCn}
+							,	FQ_CN2		= #{fqCn2}
+							,	FQ_STA			= #{fqSta}
+							,	FQ_GB			= #{fqGb}
+							,	MODDT			= GETDATE()
+							,	MODID			= #{modid}
+	        	WHEN NOT MATCHED THEN
+		        	INSERT (FQ_IDX, FQ_SJ, FQ_CN, FQ_CN2, FQ_STA, FQ_GB, REGDT, REGID)
+		        	VALUES (
+		        		(SELECT ISNULL(MAX(FQ_IDX),0)+1 FROM FAQ_T)
+		        		, #{fqSj}, #{fqCn}, #{fqCn2}, #{fqSta}, #{fqGb}, GETDATE(), #{regid})
+		        	;
+    </insert>
+    
+</mapper>

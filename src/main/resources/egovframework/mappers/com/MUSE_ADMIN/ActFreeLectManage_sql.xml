@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ActFreeLectManage">
+
+	<select id="selectActFreeLectList" resultType="egovMap">
+			<if test='actListMode.equals("PAGE") or actListMode.equals("EXCEL")'>
+			SELECT  AAA.*
+				,	(SELECT COUNT(*) FROM FREE_LECT_SUB WHERE FS_GB = 'USR' AND FM_IDX = AAA.FM_IDX) USR_CNT
+				,	(SELECT COUNT(*) FROM FREE_LECT_SUB WHERE FS_GB = 'LEC' AND FM_IDX = AAA.FM_IDX) LEC_CNT
+				,	(SELECT MIN(MV_SUBJECT) FROM FREE_LECT_SUB WHERE FS_GB = 'LEC' AND FM_IDX = AAA.FM_IDX) LEC_NM
+			FROM
+			(SELECT  ROW_NUMBER() OVER(ORDER BY ACT.REGDT DESC, ACT.FM_SUBJECT ASC) RNUM,ACT.*
+						FROM
+				(SELECT
+							A.FM_IDX
+						,	A.FM_SUBJECT
+						,	A.FM_EQ
+						,	A.FM_GIGAN
+						,	A.FM_SDT
+						,	A.FM_STA
+						,	A.REGDT
+						,	A.REGID
+						,	A.MODDT
+						,	A.MODID
+			</if>
+			<if test='actListMode.equals("COUNT")'>
+			SELECT COUNT(*) CNT 
+			</if>
+			FROM	  FREE_LECTURE A
+		<![CDATA[		
+			WHERE   FM_STA <> 'D'
+		]]>
+			<if test='!searchOp2.equals("")'>
+				<![CDATA[ AND A.FM_EQ = #{searchOp2} ]]>
+			</if>
+			<if test='!searchOp3.equals("")'>
+				<![CDATA[ AND A.FM_STA = #{searchOp3} ]]>
+			</if>
+			<if test='!searchSdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) >= #{searchSdt} ]]>
+			</if>
+			<if test='!searchEdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) <= #{searchEdt} ]]>
+			</if>
+			<if test="searchKeyword != null and !searchKeyword.equals('')">
+				<if test='searchCnd.equals("1")'>
+				<![CDATA[ AND A.FM_SUBJECT LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("2")'>
+				<![CDATA[ AND A.FM_IDX IN(SELECT FM_IDX FROM FREE_LECT_SUB WHERE FS_GB = 'LEC' AND MV_SUBJECT LIKE '%' + #{searchKeyword} + '%')	]]>
+				</if>
+				<if test='searchCnd.equals("3")'>
+				<![CDATA[ AND A.FM_IDX IN(SELECT FM_IDX FROM FREE_LECT_SUB WHERE FS_GB = 'USR' AND M_NAME LIKE '%' + #{searchKeyword} + '%')	]]>
+				</if>
+				<if test='searchCnd.equals("4")'>
+				<![CDATA[ AND A.FM_IDX IN(SELECT FM_IDX FROM FREE_LECT_SUB WHERE FS_GB = 'USR' AND M_ID LIKE '%' + #{searchKeyword} + '%')	]]>
+				</if>
+			</if>
+			<if test='actListMode.equals("PAGE")'>
+			<![CDATA[	) ACT) AAA	WHERE RNUM  BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}		]]>
+			</if>			
+			<if test='actListMode.equals("EXCEL")'>
+			<![CDATA[	) ACT) AAA		]]>
+			</if>			
+	</select>
+	
+	<select id="selectActFreeLectDetail" resultType="egovMap">
+		<![CDATA[		
+				SELECT
+							A.FM_IDX
+						,	A.FM_SUBJECT
+						,	A.FM_EQ
+						,	A.FM_GIGAN
+						,	A.FM_SDT
+						,	A.FM_STA
+						,	A.REGDT
+						,	A.REGID
+						,	A.MODDT
+						,	A.MODID
+			FROM	  FREE_LECTURE A
+			WHERE   A.FM_IDX = #{fmIdx}
+		]]>
+	</select>
+	
+	<select id="selectActFreeLectMaxIdx" resultType="String">
+		<![CDATA[
+			SELECT ISNULL(MAX(FM_IDX),0)+1 FROM FREE_LECTURE
+		]]>
+	</select>
+	
+    <insert id="insertActFreeLect">
+            INSERT INTO FREE_LECTURE 
+                (	FM_IDX
+				,	FM_SUBJECT
+				,	FM_EQ
+				,	FM_GIGAN
+				,	FM_SDT
+				,	FM_STA
+				,	REGDT
+				,	REGID
+				)
+            VALUES (
+					#{fmIdx}
+				,	#{fmSubject}
+				,	#{fmEq}
+				,	#{fmGigan}
+				,	#{fmSdt}
+				,	'수강중'
+				,	GETDATE()
+				,	#{regid}
+				);
+    </insert>
+    
+	<update id="updateActFreeLect">
+			UPDATE FREE_LECTURE SET
+					FM_SUBJECT		= #{fmSubject}
+				,	FM_EQ				= #{fmEq}
+				,	FM_GIGAN		= #{fmGigan}
+				,	FM_SDT			= #{fmSdt}
+				,	FM_STA			= #{fmSta}
+				,	MODDT				= GETDATE()
+				,	MODID				= #{modid}
+			WHERE FM_IDX = #{fmIdx}
+	</update>
+	
+    <insert id="deleteActFreeLect">
+			UPDATE FREE_LECTURE SET
+					FM_STA	= 'D'
+				,	MODDT		= GETDATE()
+				,	MODID		= #{modid}
+			WHERE FM_IDX = #{fmIdx}
+    </insert>
+    
+    <insert id="deleteActFreeLectSubLec">
+        	DELETE FREE_LECT_SUB WHERE FM_IDX = #{fmIdx} AND FS_GB = 'LEC'
+				AND MV_IDX NOT IN
+				<foreach item="item" index="index" collection="mvIdxArr" open="(" close=")" separator=",">
+					#{item}
+				</foreach>
+    </insert>
+    
+    <insert id="deleteActFreeLectSubUsr">
+        	DELETE FREE_LECT_SUB WHERE FM_IDX = #{fmIdx} AND FS_GB = 'USR'
+				AND M_ID NOT IN
+				<foreach item="item" index="index" collection="mIdArr" open="(" close=")" separator=",">
+					#{item}
+				</foreach>
+    </insert>
+    
+    <insert id="insertActFreeLectSubLec">
+        	MERGE FREE_LECT_SUB AS A
+	        	USING (SELECT #{fmIdx} AS FM_IDX, #{mvIdx} AS MV_IDX) AS B
+		        	ON (A.FM_IDX = B.FM_IDX AND A.MV_IDX = B.MV_IDX)
+	        	WHEN NOT MATCHED THEN
+		        	INSERT (FS_GB, FM_IDX, MV_IDX, MV_SUBJECT, REGDT)
+		        	VALUES ('LEC', #{fmIdx}, #{mvIdx}, #{mvSubject}, GETDATE())
+		        	;
+    </insert>
+    
+    <insert id="insertActFreeLectSubUsr">
+        	MERGE FREE_LECT_SUB AS A
+	        	USING (SELECT #{fmIdx} AS FM_IDX, #{mId} AS M_ID) AS B
+		        	ON (A.FM_IDX = B.FM_IDX AND A.M_ID = B.M_ID)
+	        	WHEN NOT MATCHED THEN
+		        	INSERT (FS_GB, FM_IDX, M_ID, M_NAME, REGDT)
+		        	VALUES ('USR', #{fmIdx}, #{mId}, #{mName}, GETDATE())
+		        	;
+    </insert>
+    
+	<select id="selectActFreeLectSub" resultType="egovMap">
+			SELECT
+					FS_GB
+				,	FM_IDX
+				,	MV_IDX
+				,	MV_SUBJECT
+				,	M_ID
+				,	M_NAME
+				,	REGDT
+				,	(SELECT M_NAME FROM MEMBER_T WHERE M_ID = (SELECT MV_PROF FROM LECTURE_T WHERE MV_IDX = A.MV_IDX)) MV_PROF_NM
+			FROM	  FREE_LECT_SUB A
+			WHERE   FM_IDX = #{fmIdx} AND FS_GB = #{fsGb}
+			ORDER BY REGDT DESC
+	</select>
+
+</mapper>

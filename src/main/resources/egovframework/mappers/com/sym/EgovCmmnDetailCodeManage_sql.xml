@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="CmmnDetailCodeManage">
+
+	<select id="selectCmmnDetailCodeView" parameterType="CmmnCodeVO" resultType="egovMap">
+		<![CDATA[
+			SELECT A.CODE_ID
+				,  A.CODE
+				,  A.CODE_NM
+				,  A.SEQ
+				,  A.USE_AT
+				,  A.CODE_ETC1
+				,  A.CODE_ETC2
+				,  A.CODE_ETC3
+			FROM  CODE_DT A, CODE_MA B
+			WHERE B.USE_AT  = 'Y'
+				AND A.CODE_ID = B.CODE_ID AND A.CODE_ID = #{searchKeyword}
+				ORDER BY A.SEQ ASC, A.CODE ASC, A.CODE_ID ASC
+		]]>
+	</select>
+
+	<select id="selectCmmnDetailCodeList" parameterType="CmmnCodeVO" resultType="egovMap">
+		<![CDATA[
+			SELECT  *
+			  FROM  (
+			SELECT ROWNUM RNUM, ALL_LIST.*
+			  FROM  (
+			/* 구현 Sql */
+			SELECT  A.CODE_ID
+			     ,  A.CODE
+			     ,  A.CODE_NM
+			     ,  A.SEQ
+			     ,  A.USE_AT
+			  FROM  CODE_DT A
+			     ,  CODE_MA       B
+			 WHERE 	B.USE_AT  = 'Y'
+			   AND  A.CODE_ID = B.CODE_ID
+		]]>
+			<if test='searchCondition.equals("1")'>
+				<![CDATA[ AND A.CODE_ID LIKE '%' + #{searchKeyword} + '%']]>
+			</if>
+			<if test='searchCondition.equals("2")'>
+				<![CDATA[ AND A.CODE    LIKE '%' + #{searchKeyword} + '%']]>
+			</if>
+			<if test='searchCondition.equals("3")'>
+				<![CDATA[ AND A.CODE_NM LIKE '%' + #{searchKeyword} + '%']]>
+			</if>
+		<![CDATA[
+			 ORDER BY A.SEQ ASC, A.CODE ASC, A.CODE_ID ASC
+			/* 구현 Sql */
+				    ) ALL_LIST
+				    )
+			 WHERE  RNUM  > #{firstIndex}
+			   AND  RNUM <= #{firstIndex} + #{recordCountPerPage}
+		]]>
+	</select>
+
+	<select id="selectCmmnDetailCodeListTotCnt" parameterType="CmmnCodeVO" resultType="int">
+		<![CDATA[
+			SELECT  COUNT(*) totcnt
+			  FROM  CODE_DT A
+			     ,  CODE_MA       B
+			 WHERE 	B.USE_AT  = 'Y'
+			   AND  A.CODE_ID = B.CODE_ID
+		]]>
+			<if test='searchCondition.equals("1")'>
+				<![CDATA[ AND A.CODE_ID LIKE '%' + #{searchKeyword} + '%']]>
+			</if>
+			<if test='searchCondition.equals("2")'>
+				<![CDATA[ AND A.CODE    LIKE '%' + #{searchKeyword} + '%']]>
+			</if>
+			<if test='searchCondition.equals("3")'>
+				<![CDATA[ AND A.CODE_NM LIKE '%' + #{searchKeyword} + '%']]>
+			</if>
+	</select>
+
+	<select id="selectCmmnDetailCodeDetail" parameterType="CmmnDetailCode" resultType="CmmnDetailCode">
+		<![CDATA[
+            SELECT  A.CODE_ID    codeId
+                 ,  B.CODE_ID_NM codeIdNm
+                 ,  A.CODE       code
+                 ,  A.CODE_NM    codeNm
+                 ,  A.CODE_DC    codeDc
+                 ,  A.SEQ     seq
+                 ,  A.USE_AT     useAt
+                 ,  A.CODE_ETC1     codeEtc1
+                 ,  A.CODE_ETC2     codeEtc2
+                 ,  A.CODE_ETC3     codeEtc3
+              FROM  CODE_DT A
+                 ,  CODE_MA       B
+             WHERE  B.USE_AT  = 'Y'
+               AND  A.CODE_ID = B.CODE_ID
+			   AND  A.CODE_ID = #{codeId}
+			   AND  A.CODE    = #{code}
+		]]>
+	</select>
+
+	<insert id="insertCmmnDetailCode">
+		<![CDATA[
+		    INSERT
+		      INTO  CODE_DT
+		         (  CODE_ID
+		         ,  CODE
+		         ,  CODE_NM
+		         ,  CODE_DC
+		         ,  SEQ
+		         ,  USE_AT
+                 ,  CODE_ETC1
+                 ,  CODE_ETC2
+                 ,  CODE_ETC3
+                 ,	REGDT
+                 ,	REGEMP
+		         )
+		    VALUES
+		         (  #{codeId}
+		         ,  #{code}
+		         ,  #{codeNm}
+		         ,  #{codeDc}
+		         ,  #{seq}
+		         ,  #{useAt}
+		         ,  #{codeEtc1}
+		         ,  #{codeEtc2}
+		         ,  #{codeEtc3}
+		         ,  GETDATE()
+		         ,  #{frstRegisterId}
+		         )
+		]]>
+	</insert>
+
+	<update id="updateCmmnDetailCode">
+		<![CDATA[
+            UPDATE  CODE_DT
+               SET  CODE_NM           = #{codeNm}
+                 ,  CODE_DC      	     = #{codeDc}
+                 ,  SEQ            			 = #{seq}
+                 ,  USE_AT       		     = #{useAt}
+                 ,  CODE_ETC1           = #{codeEtc1}
+                 ,  CODE_ETC2           = #{codeEtc2}
+                 ,  CODE_ETC3           = #{codeEtc3}
+                 ,  REGDT					 = GETDATE()
+                 ,  REGEMP				 = #{lastUpdusrId}
+             WHERE  CODE_ID   = #{codeId}
+               AND  CODE      = #{code}
+		]]>
+	</update>
+
+	<delete id="deleteCmmnDetailCode">
+<!--             UPDATE  CODE_DT SET USE_AT = 'N' WHERE CODE_ID = #{codeId} AND CODE = #{code# -->
+		<![CDATA[
+			DELETE FROM CODE_DT
+				WHERE  CODE_ID   = #{codeId}
+				AND  CODE      = #{code}
+		]]>
+	</delete>
+
+</mapper>

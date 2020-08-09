@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ActOrderEstiManage">
+
+	<select id="selectActOrderEstiList" resultType="egovMap">
+			<if test='actListMode.equals("PAGE") or actListMode.equals("EXCEL")'>
+			SELECT  AAA.*
+			, (CASE OC_PIDX WHEN '0' THEN (SELECT MV_SUBJECT FROM LECTURE_T WHERE MV_IDX = OC_LECIDX)
+			ELSE (SELECT CO_SUBJECT FROM COLLEGE_T WHERE CO_IDX = OC_PIDX) END) OC_SUBJECT
+			, (CASE OC_GUBUN WHEN '13' THEN (SELECT BM_SUBJECT FROM BOOK_MA WHERE BM_IDX = OC_BOOIDX) END) OC_BOOK
+			, (SELECT M_NAME FROM MEMBER_T WHERE M_ID = AAA.M_ID) M_NAME
+			FROM
+			(SELECT  ROW_NUMBER() OVER(ORDER BY ACT.REGDT DESC) RNUM,ACT.*
+						FROM
+				(SELECT
+							A.OC_IDX
+						,	A.M_ID
+						,	A.OC_PIDX
+						,	A.OC_BOOIDX
+						,	A.OC_GUBUN
+						,	A.OC_LECIDX
+						,	A.OC_LECMOD
+						,	A.OC_LECDAY
+						,	A.OC_QNT
+						,	A.OC_PRICE
+						,	A.OC_ESTI
+						,	A.OC_ESTI_PRICE
+						,	A.REGDT
+			</if>
+			<if test='actListMode.equals("COUNT")'>
+			SELECT COUNT(*) CNT 
+			</if>
+			FROM	  ORDER_CART A
+		<![CDATA[		
+			WHERE   OC_ESTI IS NOT NULL
+		]]>
+			<if test='!searchOp2.equals("")'>
+				<![CDATA[ AND A.OC_ESTI = #{searchOp2} ]]>
+			</if>
+			<if test='!searchSdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) >= #{searchSdt} ]]>
+			</if>
+			<if test='!searchEdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) <= #{searchEdt} ]]>
+			</if>
+			<if test="searchKeyword != null and !searchKeyword.equals('')">
+				<if test='searchCnd.equals("1")'>
+				AND (
+				<!-- 
+				A.OC_LECIDX IN(SELECT MV_IDX FROM LECTURE_T WHERE MV_SUBJECT LIKE '%' + #{searchKeyword} + '%')
+				OR
+				 -->
+				A.OC_PIDX IN(SELECT CO_IDX FROM COLLEGE_T WHERE CO_SUBJECT LIKE '%' + #{searchKeyword} + '%'))
+				</if>
+				<if test='searchCnd.equals("2")'>
+				<![CDATA[ AND A.M_ID IN(SELECT M_ID FROM MEMBER_T WHERE M_NAME LIKE '%' + #{searchKeyword} + '%')	]]>
+				</if>
+				<if test='searchCnd.equals("3")'>
+				<![CDATA[ AND A.M_ID LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+			</if>
+			<if test='actListMode.equals("PAGE")'>
+			<![CDATA[	) ACT) AAA	WHERE RNUM  BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}		]]>
+			</if>			
+			<if test='actListMode.equals("EXCEL")'>
+			<![CDATA[	) ACT) AAA		]]>
+			</if>			
+	</select>
+	
+	<select id="selectActOrderEstiDetail" resultType="egovMap">
+		<![CDATA[		
+				SELECT
+						A.OC_IDX
+					,	A.M_ID
+					,	A.OC_PIDX
+					,	A.OC_BOOIDX
+					,	A.OC_GUBUN
+					,	A.OC_LECIDX
+					,	A.OC_LECMOD
+					,	A.OC_LECDAY
+					,	A.OC_QNT
+					,	A.OC_PRICE
+					,	A.OC_ESTI
+					,	A.OC_ESTI_PRICE
+					,	A.REGDT
+			FROM	  ORDER_CART A
+			WHERE   A.OC_IDX = #{ocIdx}
+		]]>
+	</select>
+	
+	<select id="selectActOrderEstiMaxIdx" resultType="String">
+		<![CDATA[
+			SELECT ISNULL(MAX(OC_IDX),0)+1 FROM ORDER_CART
+		]]>
+	</select>
+	
+    <insert id="insertActOrderEsti">
+            INSERT INTO ORDER_CART 
+                (	OC_IDX
+					,	M_ID
+					,	OC_PIDX
+					,	OC_BOOIDX
+					,	OC_GUBUN
+					,	OC_LECIDX
+					,	OC_LECMOD
+					,	OC_LECDAY
+					,	OC_QNT
+					,	OC_PRICE
+					,	OC_ESTI
+					,	OC_ESTI_PRICE
+					,	REGDT
+				)
+            VALUES (
+					(SELECT ISNULL(MAX(OC_IDX),0)+1 FROM ORDER_CART)
+				,	#{mId}
+				,	#{ocPidx}
+				,	#{ocBooidx}
+				,	#{ocGubun}
+				,	#{ocLecidx}
+				,	#{ocLecmod}
+				,	#{ocLecday}
+				,	#{ocQnt}
+				,	#{ocPrice}
+				,	'등록'
+				,	#{ocEstiPrice}
+				,	GETDATE()
+				);
+    </insert>
+    
+    <insert id="deleteActOrderEsti">
+			DELETE ORDER_CART
+			WHERE OC_IDX = #{ocIdx}
+    </insert>
+    
+
+</mapper>

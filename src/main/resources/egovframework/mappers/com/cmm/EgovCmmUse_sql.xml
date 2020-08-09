@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CmmUse">
+
+	<resultMap id="CmmCodeDetail" type="egovframework.com.cmm.service.CmmnDetailCode">
+		<result property="codeId"    		column="CODE_ID"/>
+		<result property="code"  				column="CODE"/>
+		<result property="codeNm"   		column="CODE_NM"/>
+		<result property="codeDc"   		column="CODE_DC"/>
+		<result property="seq"  			 	column="SEQ" />
+		<result property="codeEtc1"  	 	column="CODE_ETC1"/>
+		<result property="codeEtc2"  	 	column="CODE_ETC2"/>
+		<result property="codeEtc3"  	 	column="CODE_ETC3"/>
+	</resultMap>
+
+    <select id="selectFieldDataOne" parameterType="ComDefaultCodeVO" resultType="java.lang.String">
+            <![CDATA[ 
+            SELECT 
+                ${codeId}
+            FROM 
+                ${tableNm}
+            WHERE 1=1
+            ]]>
+			<if test="codeEtc1 != null and !codeEtc1.equals('')">
+				<![CDATA[	AND ${codeEtc1} = #{codeDc} 	]]>
+			</if>
+    </select>
+    
+	<select id="selectCmmCodeDetail" parameterType="ComDefaultCodeVO" resultMap="CmmCodeDetail">
+			SELECT 
+			CODE_ID, CODE, CODE_NM, CODE_DC, SEQ, CODE_ETC1, CODE_ETC2
+			<if test="codeAuth != null and !codeAuth.equals('')">
+				<if test="menuCode == null or menuCode.equals('')">
+					, (SELECT CODE_NM FROM CODE_DT WHERE CODE_ID='COM042' AND LEFT(SEQ,2) = LEFT(A.SEQ,2)) CODE_ETC3
+				</if>
+			</if>
+			FROM 
+			CODE_DT A
+			WHERE
+			USE_AT      = 'Y'
+			AND CODE_ID = #{codeId}
+			<if test="seq != null and !seq.equals('')">
+				AND SEQ LIKE  #{seq} + '%'
+			</if>
+			<if test="codeEtc1 != null and !codeEtc1.equals('')">
+				AND CODE_ETC1 = #{codeEtc1}
+			</if>
+			<if test="codeLike != null and !codeLike.equals('')">
+				AND CODE LIKE  #{codeLike} + '%'
+			</if>
+			<if test="menuCode != null and !menuCode.equals('')">
+				AND SEQ LIKE (SELECT LEFT(SEQ,2) FROM CODE_DT WHERE USE_AT = 'Y' AND CODE_ID = #{codeId} AND CODE = #{menuCode})+'%'
+			</if>
+			<if test="codeAuth != null and !codeAuth.equals('')">
+				AND CODE IN(SELECT MENU_CODE FROM INFO_AUTH WHERE GROUP_ID = #{codeAuth})
+				<if test="menuCode == null or menuCode.equals('')">
+					AND SEQ IN(SELECT MIN(B.SEQ) FROM INFO_AUTH A INNER JOIN CODE_DT B ON A.MENU_CODE=B.CODE WHERE GROUP_ID=#{codeAuth} AND B.CODE_ID=#{codeId} GROUP BY LEFT(SEQ,2))
+				</if>
+				ORDER BY SEQ ASC, CODE_ETC1 ASC
+			</if>
+			<if test="codeAuth == null or codeAuth.equals('')">
+			ORDER BY SEQ ASC, CODE ASC
+			</if>
+	</select>
+
+	<select id="commonCodeEtc1" parameterType="ComDefaultCodeVO" resultType="String">
+		<![CDATA[
+			SELECT 	${tableNm} CODE_ETC1
+			FROM	  CODE_DT
+			WHERE   1=1 AND USE_AT = 'Y'
+		]]>
+			<if test="codeId != null and !codeId.equals('')">
+			<![CDATA[	AND CODE_ID = #{codeId}	]]>
+			</if>
+			<if test="code != null and !code.equals('')">
+			<![CDATA[	AND CODE = #{code}	]]>
+			</if>
+	</select>
+		
+	<update id="updateCommonCodeEtc1">
+		<![CDATA[
+			UPDATE  CODE_DT
+				SET
+					CODE_ETC1 = DBO.FNDECODE(#{codeEtc1},'',CODE_ETC1,#{codeEtc1})
+				,	CODE_ETC2 = DBO.FNDECODE(#{codeEtc2},'',CODE_ETC2,#{codeEtc2})
+				WHERE  CODE_ID = #{codeId} AND  CODE = #{code}
+		]]>
+	</update>
+
+</mapper>      

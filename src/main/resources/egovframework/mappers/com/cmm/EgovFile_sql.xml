@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="FileManage">
+
+	<resultMap id="fileList" type="egovframework.com.cmm.service.FileVO">
+		<result property="atchFileId" column="ATCH_FILE_ID"/>
+		<result property="fileCn" column="FILE_CN"/>
+		<result property="fileExtsn" column="FILE_EXTSN"/>
+		<result property="fileMg" column="FILE_SIZE"/>
+		<result property="fileSn" column="FILE_SN"/>
+		<result property="fileStreCours" column="FILE_STRE_COURS"/>
+		<result property="orignlFileNm" column="ORIGNL_FILE_NM"/>
+		<result property="streFileNm" column="STRE_FILE_NM"/>
+		<result property="creatDt" column="CREAT_DT"/>			
+	</resultMap>
+
+	<resultMap id="fileDetail" type="egovframework.com.cmm.service.FileVO">
+		<result property="atchFileId" column="ATCH_FILE_ID"/>
+		<result property="fileCn" column="FILE_CN"/>
+		<result property="fileExtsn" column="FILE_EXTSN"/>
+		<result property="fileMg" column="FILE_SIZE"/>
+		<result property="fileSn" column="FILE_SN"/>
+		<result property="fileStreCours" column="FILE_STRE_COURS"/>
+		<result property="orignlFileNm" column="ORIGNL_FILE_NM"/>
+		<result property="streFileNm" column="STRE_FILE_NM"/>
+	</resultMap>	
+
+
+ 	<select id="selectFileList" parameterType="FileVO" resultMap="fileList" >
+ 		<![CDATA[
+			SELECT 
+				a.ATCH_FILE_ID, b.FILE_CN, b.FILE_SN, b.FILE_STRE_COURS, b.STRE_FILE_NM,
+				b.FILE_EXTSN, b.ORIGNL_FILE_NM, b.FILE_SIZE, a.CREAT_DT
+			FROM
+				BBS_FILE a, BBS_FILEDETAIL b
+			WHERE
+				a.ATCH_FILE_ID = #{atchFileId}
+			AND 
+				a.ATCH_FILE_ID = b.ATCH_FILE_ID
+			AND 
+				a.USE_AT = 'Y'				
+			ORDER BY b.FILE_SN	
+ 		]]>
+ 	</select>
+ 	
+	<insert id="insertFileMaster" parameterType="FileVO" >
+		<![CDATA[
+			INSERT INTO BBS_FILE
+			(ATCH_FILE_ID, CREAT_DT, USE_AT)
+			VALUES
+			( #{atchFileId}, GETDATE(), 'Y')			
+		]]>
+	</insert>
+	
+	<insert id="insertFileDetail" parameterType="FileVO" >
+		<![CDATA[
+			MERGE BBS_FILEDETAIL AS A
+			USING(SELECT #{atchFileId} AS ATCH_FILE_ID, #{fileSn} AS FILE_SN) AS B
+			ON A.ATCH_FILE_ID = B.ATCH_FILE_ID AND A.FILE_SN =  B.FILE_SN
+			WHEN MATCHED THEN
+			UPDATE SET
+				FILE_STRE_COURS 	= #{fileStreCours}
+				,	STRE_FILE_NM		= #{streFileNm}
+				,	ORIGNL_FILE_NM	= #{orignlFileNm}
+				,	FILE_EXTSN			= #{fileExtsn}
+				,	FILE_SIZE				= #{fileMg}
+				,	FILE_CN 				= #{fileCn}
+			WHEN NOT MATCHED THEN
+			INSERT
+			( ATCH_FILE_ID, FILE_SN, FILE_STRE_COURS, STRE_FILE_NM, 
+			  ORIGNL_FILE_NM, FILE_EXTSN, FILE_SIZE, FILE_CN )
+			VALUES
+			( #{atchFileId}, #{fileSn}, #{fileStreCours}, #{streFileNm}, 
+			  #{orignlFileNm}, #{fileExtsn}, #{fileMg}, #{fileCn} )
+		  ;
+		]]>
+	</insert>	
+	
+	<update id="updateFileCn" parameterType="FileVO" >
+		<![CDATA[
+			UPDATE BBS_FILEDETAIL SET FILE_CN = #{fileCn} WHERE ATCH_FILE_ID = #{atchFileId} AND FILE_SN = #{fileSn}
+		]]>
+	</update>	
+	
+	<delete id="deleteFileDetail" parameterType="FileVO" >
+		<![CDATA[
+			DELETE FROM BBS_FILEDETAIL
+			WHERE
+				ATCH_FILE_ID = #{atchFileId}
+			AND	
+				FILE_SN = #{fileSn}
+		]]>	
+	</delete>
+ 	
+	<select id="getMaxFileSN" parameterType="FileVO" resultType="java.lang.Integer">
+		<![CDATA[
+			SELECT ISNULL(MAX(FILE_SN),0)+1 AS FILE_SN
+			FROM BBS_FILEDETAIL
+			WHERE ATCH_FILE_ID =  #{atchFileId}
+		]]>
+	</select>
+
+ 	<select id="selectFileInf" parameterType="FileVO" resultMap="fileDetail" >
+ 		<![CDATA[
+			SELECT 
+				ATCH_FILE_ID, FILE_CN, FILE_SN, FILE_STRE_COURS, STRE_FILE_NM,
+				FILE_EXTSN, ORIGNL_FILE_NM, FILE_SIZE
+			FROM
+				BBS_FILEDETAIL
+			WHERE
+				ATCH_FILE_ID = #{atchFileId}
+			AND 
+				FILE_SN = #{fileSn}
+ 		]]>
+ 	</select>
+ 	
+	<select id="selectFileSearch" parameterType="FileVO" resultMap="fileDetail" >
+ 		<![CDATA[
+			SELECT 
+					idx ATCH_FILE_ID
+				,	'' FILE_CN
+				,	'' FILE_SN
+				,	file_path FILE_STRE_COURS
+				,	file_nm STRE_FILE_NM
+				,	file_ext FILE_EXTSN
+				,	file_nm ORIGNL_FILE_NM
+				,	'' FILE_SIZE
+			FROM
+				warmemo_warinfo
+			WHERE
+				idx = #{atchFileId}
+ 		]]>
+ 	</select>
+ 	
+	<update id="deleteBBS_FILE" parameterType="FileVO" >
+		<![CDATA[
+			UPDATE BBS_FILE
+			SET USE_AT = 'N'
+			WHERE ATCH_FILE_ID = #{atchFileId}
+		]]>
+	</update>
+
+ 	<select id="selectFileListByFileNm" parameterType="FileVO" resultMap="fileList" >
+ 		<![CDATA[
+ 		SELECT * FROM ( SELECT rownum rn, TB.* FROM (
+			SELECT 
+				a.ATCH_FILE_ID, b.FILE_CN, b.FILE_SN, b.FILE_STRE_COURS, b.STRE_FILE_NM,
+				b.FILE_EXTSN, b.ORIGNL_FILE_NM, b.FILE_SIZE, a.CREAT_DT
+			FROM
+				BBS_FILE a, BBS_FILEDETAIL b
+			WHERE
+				a.ATCH_FILE_ID = b.ATCH_FILE_ID
+			AND 
+				a.USE_AT = 'Y'
+ 		]]>
+			<if test='searchCnd.equals("streFileNm")'>
+				<![CDATA[	AND b.STRE_FILE_NM LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>
+			<if test='searchCnd.equals("orignlFileNm")'>
+				<![CDATA[	AND b.ORIGNL_FILE_NM LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>	
+		<![CDATA[			
+			ORDER BY a.ATCH_FILE_ID, b.FILE_SN	
+			) TB ) WHERE rn BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
+		]]>		 		
+ 	</select>
+
+ 	<select id="selectFileListCntByFileNm" parameterType="FileVO" resultType="java.lang.Integer" >
+ 		<![CDATA[
+			SELECT 
+				COUNT(a.ATCH_FILE_ID)
+			FROM
+				BBS_FILE a, BBS_FILEDETAIL b
+			WHERE
+				a.ATCH_FILE_ID = b.ATCH_FILE_ID
+			AND 
+				a.USE_AT = 'Y'				
+ 		]]>
+			<if test='searchCnd.equals("streFileNm")'>
+				<![CDATA[	AND b.STRE_FILE_NM LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>
+			<if test='searchCnd.equals("orignlFileNm")'>
+				<![CDATA[	AND b.ORIGNL_FILE_NM LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>	
+ 	</select>
+ 	
+  	<select id="selectImageFileList" parameterType="FileVO" resultMap="fileList" >
+ 		<![CDATA[
+			SELECT 
+				a.ATCH_FILE_ID, b.FILE_CN, b.FILE_SN, b.FILE_STRE_COURS, b.STRE_FILE_NM,
+				b.FILE_EXTSN, b.ORIGNL_FILE_NM, b.FILE_SIZE, a.CREAT_DT
+			FROM
+				BBS_FILE a, BBS_FILEDETAIL b
+			WHERE
+				a.ATCH_FILE_ID = #{atchFileId}
+			AND 
+				a.ATCH_FILE_ID = b.ATCH_FILE_ID
+			AND
+				UPPER(b.FILE_EXTSN) IN ('GIF','JPG','BMP','PNG')
+			AND 
+				a.USE_AT = 'Y'				
+			ORDER BY b.FILE_SN	
+ 		]]>
+ 	</select>	
+ 	
+</mapper>

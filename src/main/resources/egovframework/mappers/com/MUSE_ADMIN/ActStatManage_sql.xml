@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ActStatManage">
+
+	<select id="selectActStatMoving" resultType="egovMap">
+			<if test='actListMode.equals("PAGE") or actListMode.equals("EXCEL")'>
+			SELECT  AAA.*, DBO.FNDECODE(MV_PROF,NULL,'',(SELECT M_NAME FROM MEMBER_T WHERE M_ID = AAA.MV_PROF)) t_name
+			FROM
+			(SELECT  ROW_NUMBER() OVER(ORDER BY sno DESC) RNUM,ACT.*
+						FROM
+				(SELECT
+					a.sno, a.uid, a.o_date, a.jumun, a.use_point, a.jong_new, a.p_name, a.mobile_yn, a.o_name, a.o_tel, a.o_hand, a.b_name, a.method, a.fname
+					, a.memo2, a.mobile_order_yn, a.payday, b.sno AS sno2, b.sin_date AS bsin_date, b.gigan_day AS bgigan_day,b.goods, b.price2 AS bprice2,status2
+					, b.mobile_yn AS mobile_yn2, b.lecture_sno, d.MV_PROF
+			</if>
+			<if test='actListMode.equals("COUNT")'>
+			SELECT COUNT(*) CNT 
+			</if>
+			FROM 
+				DAEBANG.dbo.lecture_order a INNER JOIN 
+				DAEBANG.dbo.lecture_order2 b ON a.sno=b.lsno LEFT JOIN 
+				LECTURE_T d ON b.lecture_sno=d.MV_IDX WHERE a.sno > 0
+				<if test="searchKeyword != null and !searchKeyword.equals('')">
+					<if test='searchCnd.equals("uid")'> AND a.${searchCnd} = #{searchKeyword}</if>
+					<if test='!searchCnd.equals("uid")'> AND a.${searchCnd} LIKE '%' + #{searchKeyword} + '%'</if> 
+				</if>
+				<if test='searchOp6.equals("Y")'><![CDATA[ AND b.mobile_yn = 'Y' ]]></if>
+				<if test='searchOp6.equals("N")'><![CDATA[ AND ISNULL(b.mobile_yn,'N') <> 'Y' ]]></if>
+				<if test='!searchOp4.equals("")'><![CDATA[ AND d.MV_PROF = #{searchOp4} ]]></if>
+				<if test='searchOp5.equals("0")'><![CDATA[ AND b.lecture_sno = '0' ]]></if>
+				<if test='searchOp5.equals("1")'><![CDATA[ AND b.lecture_sno <> '0' ]]></if>
+				<if test='!searchSdt.equals("")'><![CDATA[ AND b.sin_date >= #{searchSdt} ]]></if>
+				<if test='!searchEdt.equals("")'><![CDATA[ AND b.sin_date <= #{searchEdt} ]]></if>
+				<if test='!searchSdt2.equals("")'><![CDATA[ AND a.o_date >= #{searchSdt2} ]]></if>
+				<if test='!searchEdt2.equals("")'><![CDATA[ AND a.o_date <= #{searchEdt2} ]]></if>
+				<if test='!searchActSday.equals("")'><![CDATA[ AND a.payday >= #{searchActSday} ]]></if>
+				<if test='!searchActEday.equals("")'><![CDATA[ AND a.payday <= #{searchActEday} ]]></if>
+				<if test="searchArr1 != null and !searchArr1.equals('')">
+				AND b.status2 IN
+				<foreach item="item" index="index" collection="searchArr1" open="(" close=")" separator=",">
+					#{item}
+				</foreach>
+				</if>
+				<if test="searchArr2 != null and !searchArr2.equals('')">
+				AND 
+				<foreach item="item" index="index" collection="searchArr2" open="(" close=")" separator="OR">
+					a.method LIKE '%' + #{item} + '%' 
+				</foreach>
+				</if>
+			<if test='actListMode.equals("PAGE")'>
+			<![CDATA[	) ACT) AAA	WHERE RNUM  BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}		]]>
+			</if>			
+			<if test='actListMode.equals("EXCEL")'>
+			<![CDATA[	) ACT) AAA		]]>
+			</if>			
+	</select>
+   
+	<select id="selectActStatSum" resultType="egovMap">
+			SELECT ISNULL(SUM(cnt),0) CNT, ISNULL(SUM(sum_price),0) SUM_PRICE FROM ( 
+			SELECT COUNT(b.lsno) AS cnt, SUM(b.price2) AS sum_price
+			FROM 
+				DAEBANG.dbo.lecture_order a INNER JOIN 
+				DAEBANG.dbo.lecture_order2 b ON a.sno=b.lsno LEFT JOIN 
+				LECTURE_T d ON b.lecture_sno=d.MV_IDX WHERE a.sno > 0
+				<if test="searchKeyword != null and !searchKeyword.equals('')">
+					<if test='searchCnd.equals("uid")'> AND a.${searchCnd} = #{searchKeyword}</if>
+					<if test='!searchCnd.equals("uid")'> AND a.${searchCnd} LIKE '%' + #{searchKeyword} + '%'</if> 
+				</if>
+				<if test='searchOp6.equals("Y")'><![CDATA[ AND b.mobile_yn = 'Y' ]]></if>
+				<if test='!searchOp4.equals("")'><![CDATA[ AND d.MV_PROF = #{searchOp4} ]]></if>
+				<if test='searchOp5.equals("0")'><![CDATA[ AND b.lecture_sno = '0' ]]></if>
+				<if test='searchOp5.equals("1")'><![CDATA[ AND b.lecture_sno <> '0' ]]></if>
+				<if test='!searchSdt.equals("")'><![CDATA[ AND b.sin_date >= #{searchSdt} ]]></if>
+				<if test='!searchEdt.equals("")'><![CDATA[ AND b.sin_date <= #{searchEdt} ]]></if>
+				<if test='!searchActSday.equals("")'><![CDATA[ AND a.payday >= #{searchActSday} ]]></if>
+				<if test='!searchActEday.equals("")'><![CDATA[ AND a.payday <= #{searchActEday} ]]></if>
+				<if test="searchArr1 != null and !searchArr1.equals('')">
+				AND b.status2 IN
+				<foreach item="item" index="index" collection="searchArr1" open="(" close=")" separator=",">
+					#{item}
+				</foreach>
+				</if>
+				<if test="searchArr2 != null and !searchArr2.equals('')">
+				AND 
+				<foreach item="item" index="index" collection="searchArr2" open="(" close=")" separator="OR">
+					a.method LIKE '%' + #{item} + '%' 
+				</foreach>
+				</if>
+			 GROUP BY b.lsno
+			  ) t
+	</select>
+   
+	<select id="selectActStatTotalCnt" resultType="int">
+			SELECT COUNT(*) CNT FROM 
+				DAEBANG.dbo.lecture_order a INNER JOIN 
+				DAEBANG.dbo.lecture_order2 b ON a.sno=b.lsno LEFT JOIN 
+				LECTURE_T d ON b.lecture_sno=d.MV_IDX WHERE a.sno > 0
+	</select>
+   
+
+
+	<select id="selectActStatBook" resultType="egovMap">
+			<if test='actListMode.equals("PAGE") or actListMode.equals("EXCEL")'>
+			SELECT  *
+			FROM
+			(SELECT  ROW_NUMBER() OVER(ORDER BY sno DESC) RNUM,ACT.*
+						FROM
+				(SELECT *
+			</if>
+			<if test='actListMode.equals("COUNT")'>
+			SELECT COUNT(*) CNT 
+			</if>
+			<if test='actListMode.equals("SUM")'>
+			SELECT COUNT(sno) AS cnt, ISNULL(SUM(p_total),0) AS SUM_PRICE
+			</if>
+			FROM DAEBANG.dbo.book_order WHERE sno > 0
+				<if test='searchOp6.equals("Y")'><![CDATA[ AND p_total = '0' ]]></if>
+				<if test="searchKeyword != null and !searchKeyword.equals('')">
+					<if test='searchCnd.equals("uid")'> AND ${searchCnd} = #{searchKeyword}</if>
+					<if test='!searchCnd.equals("uid")'> AND ${searchCnd} LIKE '%' + #{searchKeyword} + '%'</if> 
+				</if>
+				<if test='!searchSdt.equals("")'><![CDATA[ AND o_date >= #{searchSdt} ]]></if>
+				<if test='!searchEdt.equals("")'><![CDATA[ AND o_date <= #{searchEdt} ]]></if>
+				<if test='!searchActSday.equals("")'><![CDATA[ AND payday >= #{searchActSday} ]]></if>
+				<if test='!searchActEday.equals("")'><![CDATA[ AND payday <= #{searchActEday} ]]></if>
+				<if test="searchArr1 != null and !searchArr1.equals('')">
+				AND status IN
+				<foreach item="item" index="index" collection="searchArr1" open="(" close=")" separator=",">
+					#{item}
+				</foreach>
+				</if>
+				<if test="searchArr2 != null and !searchArr2.equals('')">
+				AND 
+				<foreach item="item" index="index" collection="searchArr2" open="(" close=")" separator="OR">
+					method LIKE '%' + #{item} + '%' 
+				</foreach>
+				</if>
+			<if test='actListMode.equals("SUM")'>
+			AND (status LIKE '%결제완료%' OR status LIKE '%거래완료%' OR status LIKE '%배송%')
+			</if>			
+			<if test='actListMode.equals("PAGE")'>
+			<![CDATA[	) ACT) AAA	WHERE RNUM  BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}		]]>
+			</if>			
+			<if test='actListMode.equals("EXCEL")'>
+			<![CDATA[	) ACT) AAA		]]>
+			</if>			
+	</select>
+   
+	<select id="selectActStatBookTotalCnt" resultType="int">
+			SELECT COUNT(*) CNT FROM 
+				DAEBANG.dbo.book_order WHERE sno > 0
+	</select>
+   
+
+	<!-- //fee_rate 는 교수 데이터 이관시 입력 -->
+	<!-- //종합반 수수료제외 금액(ex_price_jong)은 신규 클래스강의에서 가져오지만, 기존 주문건의 경우 기존 강의 데이타(DAEBANG.dbo.lecture)에서 가져온다 -->
+	<select id="selectActStatProf" resultType="egovMap">
+			<if test='actListMode.equals("PAGE") or actListMode.equals("EXCEL")'>
+			SELECT  AAA.*
+				, (SELECT M_NAME FROM MEMBER_T WHERE M_ID = AAA.MV_PROF) t_name
+				, DBO.ISEMPTY((SELECT P_RATE FROM PROF_SUB WHERE M_ID = AAA.MV_PROF),0.0) fee_rate
+				, (CASE WHEN ISNULL(AAA.CO_IDX,'') = '' OR AAA.CO_IDX = '0' THEN 
+						DBO.ISEMPTY((SELECT ex_price_jong FROM DAEBANG.dbo.lecture WHERE sno = AAA.lecture_sno),0)
+					ELSE
+						DBO.ISEMPTY((SELECT CO_CHARGE FROM COLLEGE_T WHERE CO_IDX = AAA.CO_IDX),0)
+					END) ex_price_jong
+				, (SELECT COUNT(s1.BM_IDX) FROM LECTURE_BOOK s1 INNER JOIN BOOK_MA s2 ON s1.BM_IDX=s2.BM_IDX 
+					WHERE 
+					(','+(case convert(varchar,lecture_sno) when '0' then jong_new+','+pro else convert(varchar,lecture_sno) end)+',' LIKE '%,'+CONVERT(VARCHAR, s1.MV_IDX)+',%' )
+					AND s2.BM_SUBJECT LIKE '%교재포함%') free_book_cnt
+			FROM
+			(SELECT  ROW_NUMBER() OVER(ORDER BY sno, bsno, mv_idx) RNUM,ACT.*
+						FROM
+				(SELECT
+					a.sno, a.uid, a.o_date, a.jumun, ISNULL(a.use_point,0) use_point, a.jong_new, a.p_name, a.mobile_yn, a.o_name, a.o_tel, a.o_hand, a.b_name, a.method, a.fname
+					, a.memo2, a.mobile_order_yn, a.payday, b.sno AS bsno, b.sin_date AS bsin_date, b.gigan_day AS bgigan_day,b.goods, b.price, b.price2, b.mobile_yn AS mobile_yn2
+					, b.lecture_sno, b.status2, b.idx AS CO_IDX, b.pro, d.MV_IDX, d.MV_SUBJECT AS subject, d.MV_PROF, DBO.ISEMPTY(d.MV_CHARGE,0) AS ex_price
+			</if>
+			<if test='actListMode.equals("COUNT")'>
+			SELECT COUNT(*) CNT 
+			</if>
+			FROM 
+				DAEBANG.dbo.lecture_order a INNER JOIN 
+				DAEBANG.dbo.lecture_order2 b ON a.sno=b.lsno AND ISNULL(b.price,0) > 0 LEFT JOIN 
+				LECTURE_T d ON b.lecture_sno=d.MV_IDX 
+					OR ','+a.jong_new+',' LIKE '%,'+CONVERT(VARCHAR, d.MV_IDX)+',%' 
+					OR ','+b.pro+',' LIKE '%,'+CONVERT(VARCHAR, d.MV_IDX)+',%' 
+					WHERE a.sno > 0
+				<if test="searchKeyword != null and !searchKeyword.equals('')">
+					<if test='searchCnd.equals("uid")'> AND a.${searchCnd} = #{searchKeyword}</if>
+					<if test='!searchCnd.equals("uid")'> AND a.${searchCnd} LIKE '%' + #{searchKeyword} + '%'</if> 
+				</if>
+				<if test='searchOp6.equals("Y")'><![CDATA[ AND b.mobile_yn = 'Y' ]]></if>
+				<if test='!searchOp4.equals("")'><![CDATA[ AND d.MV_PROF = #{searchOp4} ]]></if>
+				<if test='searchOp5.equals("0")'><![CDATA[ AND b.lecture_sno = '0' ]]></if>
+				<if test='searchOp5.equals("1")'><![CDATA[ AND b.lecture_sno <> '0' ]]></if>
+				<if test='!searchSdt.equals("")'><![CDATA[ AND a.payday >= #{searchSdt} ]]></if>
+				<if test='!searchEdt.equals("")'><![CDATA[ AND a.payday <= #{searchEdt} ]]></if>
+				<if test="searchArr1 != null and !searchArr1.equals('')">
+				AND b.status2 IN
+				<foreach item="item" index="index" collection="searchArr1" open="(" close=")" separator=",">
+					#{item}
+				</foreach>
+				</if>
+				<if test="searchArr2 != null and !searchArr2.equals('')">
+				AND 
+				<foreach item="item" index="index" collection="searchArr2" open="(" close=")" separator="OR">
+					a.method LIKE '%' + #{item} + '%' 
+				</foreach>
+				</if>
+			<if test='actListMode.equals("PAGE")'>
+			<![CDATA[	) ACT) AAA	WHERE RNUM  BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}		]]>
+			</if>			
+			<if test='actListMode.equals("EXCEL")'>
+			<![CDATA[	) ACT) AAA		]]>
+			</if>			
+	</select>
+
+
+	<select id="selectActStatQna" resultType="egovMap">
+			<if test='actListMode.equals("PAGE") or actListMode.equals("EXCEL")'>
+			SELECT  *
+			FROM
+			(SELECT  ROW_NUMBER() OVER(
+			<if test='searchOp1.equals("1")'>
+			ORDER BY wdate DESC, rate DESC, sno DESC
+			</if> 
+			<if test='searchOp1.equals("2")'>
+			ORDER BY rate DESC, name
+			</if> 
+			) RNUM,ACT.*
+			</if>
+			<if test='actListMode.equals("COUNT")'>
+			SELECT COUNT(*) CNT 
+			</if>
+						FROM
+			<if test='searchOp1.equals("1")'>
+				(SELECT l.REGDT AS wdate, l.MV_IDX AS sno, l.MV_SUBJECT AS goods, m.M_NAME AS name
+			</if> 
+			<if test='searchOp1.equals("2")'>
+				(SELECT m.M_NAME AS name
+			</if> 
+					, SUM(CASE WHEN b.REPLY_LC = 0 THEN 0 ELSE 1 END) AS ans, COUNT(*) AS cnt 
+					, ROUND((CAST(SUM(CASE WHEN b.REPLY_LC = 0 THEN 0 ELSE 1 END) AS FLOAT) / COUNT(*)) * 100.0,2) AS rate
+			FROM BBS_T b 
+				INNER JOIN LECTURE_T l ON b.NTT_CAT=l.MV_IDX 
+				INNER JOIN MEMBER_T m ON l.MV_PROF=m.M_ID 
+				<![CDATA[ WHERE NTT_TOP <> 'Y' AND REPLY_LC IN (0,1) AND BBS_ID='BBS_0013' ]]>
+				<if test="searchKeyword != null and !searchKeyword.equals('')">
+					<if test='searchCnd.equals("all")'>
+					AND (l.MV_SUBJECT LIKE '%' + #{searchKeyword} + '%' OR m.M_NAME LIKE '%' + #{searchKeyword} + '%' )</if>
+					<if test='!searchCnd.equals("all")'> AND ${searchCnd} LIKE '%' + #{searchKeyword} + '%'</if> 
+				</if>
+				<if test='!searchOp2.equals("")'><![CDATA[ AND m.M_ID = #{searchOp2} ]]></if>
+				<if test='!searchSdt.equals("")'><![CDATA[ AND b.NTT_REGDT >= #{searchSdt} ]]></if>
+				<if test='!searchEdt.equals("")'><![CDATA[ AND b.NTT_REGDT <= #{searchEdt} ]]></if>
+			<if test='searchOp1.equals("1")'>
+			GROUP BY l.REGDT, l.MV_IDX, l.MV_SUBJECT, m.M_NAME ) ACT
+			</if> 
+			<if test='searchOp1.equals("2")'>
+			GROUP BY m.M_NAME ) ACT
+			</if> 
+			<if test='actListMode.equals("PAGE")'>
+			<![CDATA[	) AAA	WHERE RNUM  BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}		]]>
+			</if>			
+			<if test='actListMode.equals("EXCEL")'>
+			<![CDATA[	) AAA		]]>
+			</if>			
+	</select>
+   
+	<select id="selectActStatPds" resultType="egovMap">
+		<if test='actListMode.equals("SUM")'>
+		SELECT ISNULL(SUM(D_CNT),0) SUM_CNT FROM (
+		</if>
+		SELECT AA.*
+		, (SELECT TOP 1 ORIGNL_FILE_NM FROM BBS_FILEDETAIL WHERE ATCH_FILE_ID = AA.ATCH_FILE_ID AND FILE_SN = 0) FILE_NM
+		, (SELECT SUM(D_CNT) FROM DOWN_CNT WHERE BBS_ID = AA.BBS_ID AND B_IDX = AA.NTT_ID
+			<if test="ntcrId != null and !ntcrId.equals('')">
+			AND M_ID = #{ntcrId}
+			</if>
+			) D_CNT
+		FROM (
+			SELECT A.BBS_ID, A.NTT_ID, A.NTT_SJ, A.NTCR_NM, A.ATCH_FILE_ID, A.NTT_REGDT
+			FROM BBS_T A 
+			WHERE BBS_ID = #{bbsId}
+			<if test="nttCat != null and !nttCat.equals('')">
+			AND NTT_CAT = #{nttCat}
+			</if>
+			AND USE_AT = 'Y'
+		) AA
+		<if test='!actListMode.equals("SUM")'>
+		ORDER BY NTT_REGDT DESC
+		</if>
+		<if test='actListMode.equals("SUM")'>
+		) BB
+		</if>
+	</select>
+   
+	<select id="selectActStatBbsDw" resultType="egovMap">
+		SELECT M_ID, SUM(D_CNT) D_CNT_SUM
+			,(SELECT M_NAME FROM MEMBER_T WHERE M_ID = A.M_ID) M_NAME
+		FROM DOWN_CNT A
+		WHERE BBS_ID = #{bbsId} AND B_IDX = #{nttId} GROUP BY M_ID
+	</select>
+   
+	<select id="selectActStatMain" resultType="egovMap">
+		<![CDATA[
+		SELECT TOP 5 * FROM DAEBANG.dbo.lecture_order ORDER BY sno DESC
+		]]>
+	</select>
+   
+	<select id="selectActStatMain1" resultType="egovMap">
+		<![CDATA[
+		SELECT left(payday,7) payDt, ROUND(SUM(pay_price) / 10000, 0) payPrice, COUNT(*) payCnt FROM DAEBANG.dbo.lecture_order 
+			WHERE left(payday,7) > left(#{searchOp1},7)
+			AND sno IN (SELECT lsno FROM DAEBANG.dbo.lecture_order2)
+			GROUP BY left(payday,7) ORDER BY left(payday,7)
+		]]>
+	</select>
+   
+	<insert id="insertCommonLog">
+		INSERT INTO DAEBANG.dbo.commonlog (orderno,stat,userid,ipaddress,wdate) VALUES
+			(#{returnStt},#{sapStatus},#{regid},#{regip}, CONVERT(DateTime, getdate()) ) 
+	</insert>
+	
+   
+	<select id="selectActCommonLog" resultType="egovMap">
+		<![CDATA[
+		SELECT 
+				stat
+			,	userid
+			,	(SELECT USER_NM FROM INFO_EMPLYR WHERE EMPLYR_ID=A.USERID) USER_NM
+			,	ipaddress
+			,	wdate
+		FROM DAEBANG.dbo.commonlog A where orderno = #{psno}  ORDER BY sno DESC
+		]]>
+	</select>
+   
+</mapper>

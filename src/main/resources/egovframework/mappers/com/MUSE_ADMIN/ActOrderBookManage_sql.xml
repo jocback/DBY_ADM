@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ActOrderBookManage">
+
+	<select id="selectActOrderBookList" resultType="egovMap">
+			<if test='actListMode.equals("PAGE") or actListMode.equals("EXCEL")'>
+			SELECT  *
+			FROM
+			(SELECT  ROW_NUMBER() OVER(ORDER BY sno DESC) RNUM,ACT.*
+						FROM
+				(SELECT *
+			</if>
+			<if test='actListMode.equals("COUNT")'>
+			SELECT COUNT(*) CNT 
+			</if>
+			<if test='actListMode.equals("SUM")'>
+			SELECT COUNT(sno) AS cnt, ISNULL(SUM(p_total),0) AS SUM_PRICE
+			</if>
+			FROM DAEBANG.dbo.book_order WHERE sno > 0
+				<if test='searchOp6.equals("Y")'><![CDATA[ AND p_total = '0' ]]></if>
+				<if test="searchKeyword != null and !searchKeyword.equals('')">
+					<if test='searchCnd.equals("uid")'> AND ${searchCnd} = #{searchKeyword}</if>
+					<if test='!searchCnd.equals("uid")'> AND ${searchCnd} LIKE '%' + #{searchKeyword} + '%'</if> 
+				</if>
+				<if test='!searchSdt.equals("")'><![CDATA[ AND o_date >= #{searchSdt} ]]></if>
+				<if test='!searchEdt.equals("")'><![CDATA[ AND o_date <= #{searchEdt} ]]></if>
+				<if test='!searchActSday.equals("")'><![CDATA[ AND payday >= #{searchActSday} ]]></if>
+				<if test='!searchActEday.equals("")'><![CDATA[ AND payday <= #{searchActEday} ]]></if>
+				<if test="searchArr1 != null and !searchArr1.equals('')">
+				AND status IN
+				<foreach item="item" index="index" collection="searchArr1" open="(" close=")" separator=",">
+					#{item}
+				</foreach>
+				</if>
+				<if test="searchArr2 != null and !searchArr2.equals('')">
+				AND 
+				<foreach item="item" index="index" collection="searchArr2" open="(" close=")" separator="OR">
+					method LIKE '%' + #{item} + '%' 
+				</foreach>
+				</if>
+			<if test='actListMode.equals("SUM")'>
+			AND (status LIKE '%결제완료%' OR status LIKE '%거래완료%' OR status LIKE '%배송%')
+			</if>			
+			<if test='actListMode.equals("PAGE")'>
+			<![CDATA[	) ACT) AAA	WHERE RNUM  BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}		]]>
+			</if>			
+			<if test='actListMode.equals("EXCEL")'>
+			<![CDATA[	) ACT) AAA		]]>
+			</if>			
+	</select>
+   
+	<select id="selectActOrderBookSubList" resultType="egovMap">
+		SELECT * FROM DAEBANG.dbo.book_order2 WHERE bsno = #{sno} ORDER BY sno
+	</select>
+   
+	<select id="selectActOrderBookDetail" resultType="egovMap">
+		SELECT A.*, B.USER_ID M_ID, B.USER_NM M_NAME, B.GROUP_ID, DBO.GETCODENAME('COM044',B.GROUP_ID) M_GUBUN_NM
+		FROM DAEBANG.dbo.book_order A
+			LEFT OUTER JOIN 
+			V_MEMBER_MASTER B
+			ON A.uid = B.USER_ID 
+		WHERE A.sno = #{sno}
+	</select>
+	
+	<update id="updateActOrderBookBasic">
+		UPDATE DAEBANG.dbo.book_order SET
+				method			= #{method2}
+			,	fname			= #{fname}
+				<if test="bank != null and !bank.equals('')">, bank = #{bank}</if>
+				<if test="bName != null and !bName.equals('')">, b_name = #{bName}</if>
+			,	status			= #{status}
+			,	r_name			= #{rName}
+			,	r_email			= #{rEmail}
+			,	r_tel				= #{rTel}
+			,	r_hand			= #{rHand}
+			,	r_zip				= #{rZip}
+			,	r_add			= #{rAdd}
+			,	r_add2			= #{rAdd2}
+			,	memo			= #{memo}
+			,	memo2			= #{memo2}
+			,	send				= #{send}
+		WHERE sno= #{sno};
+	</update>
+	
+	<select id="selectActOrderBookCancel" resultType="egovMap">
+		SELECT 
+				A.sno
+			,	A.bsno
+			,	A.d_name
+			,	A.d_reason
+			,	A.d_date
+			,	A.d_memo
+			,	A.d_bank
+		FROM DAEBANG.dbo.book_order_cancel A WHERE A.bsno = #{sno}
+	</select>
+	
+	<update id="updateActOrderBookCancel">
+      	MERGE DAEBANG.dbo.book_order_cancel AS A
+       	USING (SELECT #{sno} AS sno) AS B ON (A.sno = B.sno)
+       	WHEN MATCHED THEN
+        	UPDATE SET
+					d_name		= #{dName}
+				,	d_reason		= #{dReason}
+				,	d_date			= #{dDate}
+				,	d_memo		= #{dMemo}
+				,	d_bank			= #{dBank}
+       	WHEN NOT MATCHED THEN
+        	INSERT (bsno, d_name, d_reason, d_date, d_memo, d_bank)
+        	VALUES (#{psno}, #{dName}, #{dReason}, #{dDate}, #{dMemo}, #{dBank})
+        	;
+	</update>
+	
+    <delete id="deleteActOrderBook">
+    	BEGIN TRAN
+			DELETE DAEBANG.dbo.book_order
+			WHERE sno = #{sno};
+
+			DELETE DAEBANG.dbo.book_order2
+			WHERE bsno = #{sno};
+		COMMIT TRAN
+    </delete>
+    
+	<update id="transActOrderBook">
+		UPDATE DAEBANG.dbo.book_order SET
+				status			= #{status}
+		WHERE sno= #{sno};
+	</update>
+	
+</mapper>

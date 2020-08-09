@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ActTeamsManage">
+
+	<resultMap id="actTeamsText" type="egovframework.MUSE_ADMIN.service.ActTeamsManageVO">
+		<result property="aId" column="A_ID"/>
+		<result property="aSeq" column="A_SEQ"/>
+		<result property="aName" column="A_NAME"/>
+		<result property="aFore" column="A_FORE"/>
+		<result property="useYn" column="USE_YN"/>
+		<result property="aText" column="A_TEXT" jdbcType="CLOB"/>
+	</resultMap>
+	
+	<select id="selectActTeamsList" parameterType="ActManageSearchVO" resultType="egovMap">
+		<![CDATA[
+			SELECT  
+							A_ID
+						,	A_SEQ
+						,	A_NAME
+						,	A_FORE
+						,	USE_YN
+						,	MODEMP
+						,	CONVERT(VARCHAR(10), A.REGDT, 120) REGDT
+						,	CONVERT(VARCHAR(10), A.MODDT, 120) MODDT
+			FROM	  ORG_TEAMS A
+			WHERE   1=1
+		]]>					
+			<if test='searchCnd.equals("d1")'>
+				<![CDATA[	AND A.A_ID LIKE 'A%' ORDER BY A.A_SEQ DESC	]]>
+			</if>
+			<if test='searchCnd.equals("d2")'>
+				<![CDATA[	AND A.A_ID LIKE 'B%'	]]>
+				<if test="searchKeyword != null and !searchKeyword.equals('')">
+				<![CDATA[	AND A.A_FORE = #{searchKeyword} ORDER BY A.A_SEQ ASC	]]>
+				</if>
+				<if test="searchKeyword == null or searchKeyword.equals('')">
+				<![CDATA[	 ORDER BY A.A_SEQ ASC	]]>
+				</if>
+			</if>
+			<if test='searchCnd.equals("d3")'>
+				<![CDATA[	AND A.A_ID LIKE 'C%' AND A.A_FORE = #{searchKeyword} ORDER BY A.A_SEQ ASC	]]>
+			</if>
+	</select>
+	
+	<select id="selectActTeamsDetail" parameterType="ActTeamsManageVO" resultMap="actTeamsText">
+		<![CDATA[		
+			SELECT
+							A_ID
+						,	A_SEQ
+						,	A_NAME
+						,	A_FORE
+						,	USE_YN
+						,	A_TEXT
+			FROM	  ORG_TEAMS A
+			WHERE   A.A_ID = #{aId}
+		]]>
+	</select>
+	
+	<update id="updateActTeams">
+			UPDATE ORG_TEAMS SET
+				<if test='frmMode.equals("seq")'>
+							A_SEQ			= #{aSeq}
+				</if>
+				<if test='frmMode.equals("name")'>
+							A_NAME		= #{aName}
+				</if>
+				<if test='frmMode.equals("useyn")'>
+							USE_YN		= #{useYn}
+				</if>
+				<if test='frmMode.equals("text")'>
+							A_TEXT			= #{aText}
+				</if>
+						,	MODEMP		=	#{modemp}
+						,	MODDT			=	GETDATE()
+			WHERE A_ID = #{aId}
+	</update>
+	
+	<select id="selectActTeamsCnt" parameterType="ActTeamsManageVO" resultType="int">
+			SELECT COUNT(*) totcnt FROM ORG_TEAMS
+			WHERE A_FORE = #{aId}
+	</select>
+	
+	<select id="selectActTeamsSeq" parameterType="ActTeamsManageVO" resultType="String">
+			SELECT ISNULL(MAX(A_SEQ),0)+1 totcnt FROM ORG_TEAMS
+			WHERE 1 = 1
+		<if test="aFore == null or aFore.equals('')">
+			AND A_FORE IS NULL
+		</if>
+		<if test="aFore != null and !aFore.equals('')">
+			AND A_FORE = #{aFore}
+		</if>
+	</select>
+	
+	<delete id="deleteActTeams">
+			DELETE FROM ORG_TEAMS
+			WHERE A_ID = #{aId}
+	</delete>
+	
+    <insert id="insertActTeams">
+            INSERT INTO ORG_TEAMS 
+                (
+							A_ID
+						,	A_SEQ
+						,	A_NAME
+						,	A_FORE
+						,	USE_YN
+						,	A_TEXT
+						,	MODEMP
+						,	REGDT
+				)
+            VALUES (
+						#{aId}
+					,	#{aSeq}
+					,	#{aName}
+					,	#{aFore}
+					,	'Y'
+					,	#{aText}
+					,	#{modemp}
+					,	GETDATE()
+				)
+    </insert>
+    
+	<select id="selectActTeamEmpList" parameterType="ActManageSearchVO" resultType="egovMap">
+		<![CDATA[
+			SELECT  
+							EMP_NO
+						,	EMP_NM
+						,	ORG_CD
+						,	PSN_CD
+						,	TEL_NO
+						,	EMP_WORK
+						,	POS_NO
+						,	USEYN
+			FROM	  INFO_EMP A
+			WHERE   1=1 AND DELDT IS NULL
+		]]>					
+			<if test="searchKeyword != null and !searchKeyword.equals('')">
+				<![CDATA[	AND A.ORG_CD = #{searchKeyword} ORDER BY A.POS_NO ASC	]]>
+			</if>
+	</select>
+	
+</mapper>

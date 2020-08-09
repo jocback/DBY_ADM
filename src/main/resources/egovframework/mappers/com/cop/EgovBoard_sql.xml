@@ -1,0 +1,895 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="BBSArticle">
+
+
+<select id="selectBoardTwoArticle" parameterType="BoardManageVO" resultType="egovMap" >
+		<![CDATA[
+			SELECT * FROM (
+			SELECT
+				NTT_ID,
+				LEAD(NTT_ID,1) OVER (ORDER BY DBO.FNDECODE(a.NTT_TOP,'','N',a.NTT_TOP) ASC, a.SORT_ORDR DESC, NTT_NO ASC) PRE_NUM,
+				LEAD(NTT_SJ,1) OVER (ORDER BY DBO.FNDECODE(a.NTT_TOP,'','N',a.NTT_TOP) ASC, a.SORT_ORDR DESC, NTT_NO ASC) PRE_TITLE,
+				LEAD(REPLY_AT,1) OVER (ORDER BY DBO.FNDECODE(a.NTT_TOP,'','N',a.NTT_TOP) ASC, a.SORT_ORDR DESC, NTT_NO ASC) PRE_REPLY_AT,
+				LAG(NTT_ID,1) OVER (ORDER BY DBO.FNDECODE(a.NTT_TOP,'','N',a.NTT_TOP) ASC, a.SORT_ORDR DESC, NTT_NO ASC) NEXT_NUM,
+				LAG(NTT_SJ,1) OVER (ORDER BY DBO.FNDECODE(a.NTT_TOP,'','N',a.NTT_TOP) ASC, a.SORT_ORDR DESC, NTT_NO ASC) NEXT_TITLE,
+				LAG(REPLY_AT,1) OVER (ORDER BY DBO.FNDECODE(a.NTT_TOP,'','N',a.NTT_TOP) ASC, a.SORT_ORDR DESC, NTT_NO ASC) NEXT_REPLY_AT
+			FROM
+				BBS_T a
+			WHERE
+				a.BBS_ID = #{bbsId} AND a.USE_AT IN('Y','T') AND ISNULL(REPLY_AT, 'N') <> 'Y' 
+		]]>
+			<if test='(bbsId.equals("BBS_0007") or bbsId.equals("BBS_0013")) and nttCat != null and !nttCat.equals("")'>
+				AND A.NTT_CAT IN (SELECT MV_IDX FROM LECTURE_T WHERE MV_SUBJECT LIKE '%' + #{nttCat} + '%')
+			</if>
+			<if test='!searchOp6.equals("")'>
+				<![CDATA[ AND A.NTT_CAT = #{searchOp6} ]]>
+			</if>
+			<if test='!searchOp7.equals("")'>
+				<![CDATA[ AND ISNULL(A.NTT_HIDDEN,'N') = #{searchOp7} ]]>
+			</if>
+			<if test='!searchSdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) >= #{searchSdt} ]]>
+			</if>
+			<if test='!searchEdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) <= #{searchEdt} ]]>
+			</if>
+			<if test="searchWrd != null and !searchWrd.equals('')">
+			<if test="searchCnd == 1">
+				<![CDATA[ AND a.NTT_SJ LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>
+			<if test="searchCnd == 2">
+				<![CDATA[ AND a.NTT_CN LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>	
+			<if test="searchCnd == 3">
+				<![CDATA[ AND a.NTCR_NM LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>
+			<if test="searchCnd == 4">
+				<![CDATA[ AND a.NTT_REGDT LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>
+			<if test="searchCnd == 0">
+				<![CDATA[ AND (
+										a.NTT_SJ LIKE '%' + #{searchWrd} + '%'
+										OR a.NTT_CN LIKE '%' + #{searchWrd} + '%'
+										OR a.NTCR_NM LIKE '%' + #{searchWrd} + '%'
+										OR a.NTT_REGDT LIKE '%' + #{searchWrd} + '%'
+										) 		]]>
+			</if>
+			</if>				
+			<if test="searchUserId != null and !searchUserId.equals('')">
+			<![CDATA[ AND ((a.NTCR_ID = #{searchUserId} AND REPLY_NO='0') OR REPLY_NO IN (SELECT NTT_ID FROM BBS_T WHERE NTCR_ID = #{searchUserId} AND USE_AT = 'Y'))	]]>
+			</if>
+			) b WHERE b.NTT_ID = #{nttId}
+	</select>
+
+	<select id="selectBoardArticleList" parameterType="BoardManageVO" resultType="egovMap">
+		<![CDATA[
+		SELECT AAA.*
+				, (SELECT TOP 1 NTCR_NM FROM BBS_T  WHERE USE_AT = 'Y' AND REPLY_NO = AAA.NTT_ID) AS REPLY_ID 
+				, DBO.GETCODENAME((SELECT CATE_CD FROM BBS_MASTER WHERE BBS_ID=AAA.BBS_ID),AAA.NTT_CAT) NTT_CAT_NM
+				, (CASE WHEN BBS_ID = 'BBS_0007' OR BBS_ID = 'BBS_0013' THEN (SELECT MV_SUBJECT FROM LECTURE_T WHERE MV_IDX = AAA.NTT_CAT) ELSE '' END) NTT_LEC_NM
+				, (CASE WHEN BBS_ID = 'BBS_0001' OR BBS_ID = 'BBS_0018' THEN DBO.GETLECNAME(AAA.NTT_CAT) ELSE '' END) NTT_LEC_CD_NM
+				, (CASE WHEN BBS_ID = 'BBS_0010' AND ISNULL(THUM_FILE_ID,'') <> '' THEN (SELECT BM_PIC FROM BOOK_MA WHERE BM_IDX = THUM_FILE_ID) ELSE '' END) BM_PIC
+				, (CASE WHEN BBS_ID = 'BBS_0010' AND ISNULL(THUM_FILE_ID,'') <> '' THEN (SELECT BM_SUBJECT FROM BOOK_MA WHERE BM_IDX = THUM_FILE_ID) ELSE '' END) BM_SUBJECT
+		FROM ( SELECT ROW_NUMBER() OVER(ORDER BY
+		 ]]>
+		<if test='!searchOp2.equals("main")'>
+		DBO.FNDECODE(TB.NTT_TOP,'','N',TB.NTT_TOP) DESC, 
+		</if>
+		<![CDATA[ 
+		NTT_SEQ, TB.SORT_ORDR DESC, TB.NTT_NO ASC) rn, TB.* FROM (
+			SELECT
+				DBO.FNDECODE(REPLY_NO,'0',a.NTT_ID,REPLY_NO) NTT_ID, 
+				a.NTT_SJ, 
+				(CASE a.BBS_ID WHEN 'BBS_0014' THEN a.NTT_CN ELSE '' END) NTT_CN, 
+				a.REGID, 
+				a.NTCR_NM,
+				a.REGDT,
+				a.MODDT,
+				a.RDCNT, a.REPLY_NO, a.REPLY_AT, a.REPLY_LC, a.USE_AT, a.THUM_FILE_ID, a.ATCH_FILE_ID,
+				a.BBS_ID,
+				a.NTT_SEQ,
+				a.NTT_LOCK,
+				a.NTT_TOP,
+				a.NTT_CAT,
+				a.NTT_NO,
+				a.NTT_ID NTT_ID_OR,
+				a.NTT_MAIN,
+				a.NTT_REGDT,
+				a.NTT_HIDDEN,
+				a.SORT_ORDR,
+				a.REGIP
+			FROM
+				BBS_T a
+			LEFT OUTER JOIN 
+				V_USER_MASTER b
+			ON a.REGID = b.USER_ID 
+			WHERE
+				a.BBS_ID = #{bbsId} AND a.USE_AT IN('Y','T')
+		]]>
+			<if test='(bbsId.equals("BBS_0007") or bbsId.equals("BBS_0013")) and nttCat != null and !nttCat.equals("")'>
+				AND A.NTT_CAT IN (SELECT MV_IDX FROM LECTURE_T WHERE MV_SUBJECT LIKE '%' + #{nttCat} + '%')
+			</if>
+			<if test='!searchOp6.equals("")'>
+				<![CDATA[ AND A.NTT_CAT = #{searchOp6} ]]>
+			</if>
+			<if test='!searchOp7.equals("")'>
+				<![CDATA[ AND ISNULL(A.NTT_HIDDEN,'N') = #{searchOp7} ]]>
+			</if>
+			<if test='!searchSdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) >= #{searchSdt} ]]>
+			</if>
+			<if test='!searchEdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) <= #{searchEdt} ]]>
+			</if>
+			<if test="searchWrd != null and !searchWrd.equals('')">
+			<if test="searchCnd == 1">
+				<![CDATA[ AND a.NTT_SJ LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>
+			<if test="searchCnd == 2">
+				<![CDATA[ AND a.NTT_CN LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>	
+			<if test="searchCnd == 3">
+				<![CDATA[ AND a.NTCR_NM LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>
+			<if test="searchCnd == 4">
+				<![CDATA[ AND a.NTT_REGDT LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>
+			<if test="searchCnd == 0">
+				<![CDATA[ AND (
+										a.NTT_SJ LIKE '%' + #{searchWrd} + '%'
+										OR a.NTT_CN LIKE '%' + #{searchWrd} + '%'
+										OR a.NTCR_NM LIKE '%' + #{searchWrd} + '%'
+										OR a.NTT_REGDT LIKE '%' + #{searchWrd} + '%'
+										) 		]]>
+			</if>
+			</if>				
+			<if test="searchUserId != null and !searchUserId.equals('')">
+			<![CDATA[ AND ((a.NTCR_ID = #{searchUserId} AND REPLY_NO='0') OR REPLY_NO IN (SELECT NTT_ID FROM BBS_T WHERE NTCR_ID = #{searchUserId} AND USE_AT = 'Y'))	]]>
+			</if>
+		<![CDATA[			
+			) TB ) AAA WHERE rn BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
+		]]>				
+	</select>	
+
+	<select id="selectBoardArticleListCnt" parameterType="BoardManageVO" resultType="java.lang.Integer" >
+		<![CDATA[
+			SELECT
+				COUNT(a.NTT_ID)
+			FROM
+				BBS_T a
+			LEFT OUTER JOIN 
+				V_USER_MASTER b
+			ON a.REGID = b.USER_ID 
+			WHERE
+				a.BBS_ID = #{bbsId} AND a.USE_AT IN('Y','T')
+		]]>
+			<if test='(bbsId.equals("BBS_0007") or bbsId.equals("BBS_0013")) and nttCat != null and !nttCat.equals("")'>
+				AND A.NTT_CAT IN (SELECT MV_IDX FROM LECTURE_T WHERE MV_SUBJECT LIKE '%' + #{nttCat} + '%')
+			</if>
+			<if test='!searchOp6.equals("")'>
+				<![CDATA[ AND A.NTT_CAT = #{searchOp6} ]]>
+			</if>
+			<if test='!searchOp7.equals("")'>
+				<![CDATA[ AND ISNULL(A.NTT_HIDDEN,'N') = #{searchOp7} ]]>
+			</if>
+			<if test='!searchSdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) >= #{searchSdt} ]]>
+			</if>
+			<if test='!searchEdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) <= #{searchEdt} ]]>
+			</if>
+			<if test="searchWrd != null and !searchWrd.equals('')">
+			<if test="searchCnd == 1">
+				<![CDATA[ AND a.NTT_SJ LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>
+			<if test="searchCnd == 2">
+				<![CDATA[ AND a.NTT_CN LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>	
+			<if test="searchCnd == 3">
+				<![CDATA[ AND a.NTCR_NM LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>
+			<if test="searchCnd == 4">
+				<![CDATA[ AND a.NTT_REGDT LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>
+			<if test="searchCnd == 0">
+				<![CDATA[ AND (
+										a.NTT_SJ LIKE '%' + #{searchWrd} + '%'
+										OR a.NTT_CN LIKE '%' + #{searchWrd} + '%'
+										OR a.NTCR_NM LIKE '%' + #{searchWrd} + '%'
+										OR a.NTT_REGDT LIKE '%' + #{searchWrd} + '%'
+										) 		]]>
+			</if>
+			</if>				
+			<if test="searchUserId != null and !searchUserId.equals('')">
+			<![CDATA[ AND ((a.NTCR_ID = #{searchUserId} AND REPLY_NO='0') OR REPLY_NO IN (SELECT NTT_ID FROM BBS_T WHERE NTCR_ID = #{searchUserId} AND USE_AT = 'Y'))	]]>
+			</if>
+	</select>	
+ 
+	<select id="selectBoardArtExtListExcel" parameterType="BoardManageVO" resultType="egovMap" >
+		<![CDATA[
+			SELECT
+					a.NTCR_NM,
+					DBO.GETCODENAME((SELECT CATE_CD FROM BBS_MASTER WHERE BBS_ID=a.BBS_ID),a.NTT_CAT) NTT_CAT_NM,
+					a.NTT_SJ,
+					CONVERT(VARCHAR(10),a.REGDT, 120) as REGDT
+			FROM
+				BBS_T a
+			LEFT OUTER JOIN 
+				BBS_EXT e
+			ON a.BBS_ID = e.BBS_ID AND a.NTT_ID = e.NTT_ID 
+			WHERE
+				a.BBS_ID = #{bbsId} AND a.USE_AT IN('Y','T')
+		]]>
+			<if test='(bbsId.equals("BBS_0007") or bbsId.equals("BBS_0013")) and nttCat != null and !nttCat.equals("")'>
+				AND A.NTT_CAT IN (SELECT MV_IDX FROM LECTURE_T WHERE MV_SUBJECT LIKE '%' + #{nttCat} + '%')
+			</if>
+			<if test='!searchOp6.equals("")'>
+				<![CDATA[ AND A.NTT_CAT = #{searchOp6} ]]>
+			</if>
+			<if test='!searchOp7.equals("")'>
+				<![CDATA[ AND ISNULL(A.NTT_HIDDEN,'N') = #{searchOp7} ]]>
+			</if>
+			<if test='!searchSdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) >= #{searchSdt} ]]>
+			</if>
+			<if test='!searchEdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) <= #{searchEdt} ]]>
+			</if>
+			<if test="searchWrd != null and !searchWrd.equals('')">
+			<if test="searchCnd == 1">
+				<![CDATA[ AND a.NTT_SJ LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>
+			<if test="searchCnd == 2">
+				<![CDATA[ AND a.NTT_CN LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>	
+			<if test="searchCnd == 3">
+				<![CDATA[ AND a.NTCR_NM LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>
+			<if test="searchCnd == 4">
+				<![CDATA[ AND a.NTT_REGDT LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>
+			<if test="searchCnd == 0">
+				<![CDATA[ AND (
+										a.NTT_SJ LIKE '%' + #{searchWrd} + '%'
+										OR a.NTT_CN LIKE '%' + #{searchWrd} + '%'
+										OR a.NTCR_NM LIKE '%' + #{searchWrd} + '%'
+										OR a.NTT_REGDT LIKE '%' + #{searchWrd} + '%'
+										) 		]]>
+			</if>
+			</if>				
+			<if test="searchUserId != null and !searchUserId.equals('')">
+			<![CDATA[ AND ((a.NTCR_ID = #{searchUserId} AND REPLY_NO='0') OR REPLY_NO IN (SELECT NTT_ID FROM BBS_T WHERE NTCR_ID = #{searchUserId} AND USE_AT = 'Y'))	]]>
+			</if>
+		<![CDATA[			
+			ORDER BY DBO.FNDECODE(a.NTT_TOP,'','N',a.NTT_TOP) ASC, a.NTT_SEQ, a.SORT_ORDR DESC, NTT_NO ASC
+		]]>				
+	</select>	
+	
+	<select id="selectBoardArtExtList" parameterType="BoardManageVO" resultType="egovMap" >
+		<![CDATA[
+		SELECT * FROM ( SELECT ROW_NUMBER() OVER(ORDER BY DBO.FNDECODE(TB.NTT_TOP,'','N',TB.NTT_TOP) DESC, NTT_SEQ, TB.SORT_ORDR DESC, TB.NTT_NO ASC) rn, TB.* FROM (
+			SELECT
+				DBO.FNDECODE(REPLY_NO,'0',a.NTT_ID,REPLY_NO) NTT_ID, a.SORT_ORDR, a.NTT_SJ, a.REGID, a.NTCR_NM as FRST_REGISTER_NM,
+				CONVERT(VARCHAR(10),a.REGDT, 120) as REGDT,
+				a.RDCNT, a.RDCNT INQIRE_CO, a.REPLY_NO, a.REPLY_AT, a.REPLY_LC, a.USE_AT, a.ATCH_FILE_ID,
+				a.BBS_ID,
+				a.NTT_SEQ,
+				a.NTT_LOCK,
+				a.NTT_TOP,
+				a.NTT_CAT,
+				DBO.GETCODENAME((SELECT CATE_CD FROM BBS_MASTER WHERE BBS_ID=a.BBS_ID),a.NTT_CAT) NTT_CAT_NM,
+				a.NTT_NO,
+				a.NTT_ID NTT_ID_OR,
+				a.NTT_MAIN,
+				a.NTT_REGDT,
+				a.NTT_HIDDEN,
+				e.B_EXT1,
+				e.B_EXT2,
+				e.B_EXT3,
+				e.B_EXT4,
+				e.B_EXT5,
+				e.B_EXT6,
+				e.B_EXT7,
+				e.B_EXT8,
+				e.B_EXT9,
+				e.B_EXT10
+			FROM
+				BBS_T a
+			LEFT OUTER JOIN 
+				BBS_EXT e
+			ON a.BBS_ID = e.BBS_ID AND a.NTT_ID = e.NTT_ID 
+			LEFT OUTER JOIN 
+				V_USER_MASTER b
+			ON a.REGID = b.USER_ID 
+			WHERE
+				a.BBS_ID = #{bbsId} AND a.USE_AT IN('Y','T')
+		]]>
+			<if test='(bbsId.equals("BBS_0007") or bbsId.equals("BBS_0013")) and nttCat != null and !nttCat.equals("")'>
+				AND A.NTT_CAT IN (SELECT MV_IDX FROM LECTURE_T WHERE MV_SUBJECT LIKE '%' + #{nttCat} + '%')
+			</if>
+			<if test='!searchOp6.equals("")'>
+				<![CDATA[ AND A.NTT_CAT = #{searchOp6} ]]>
+			</if>
+			<if test='!searchOp7.equals("")'>
+				<![CDATA[ AND ISNULL(A.NTT_HIDDEN,'N') = #{searchOp7} ]]>
+			</if>
+			<if test='!searchSdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) >= #{searchSdt} ]]>
+			</if>
+			<if test='!searchEdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) <= #{searchEdt} ]]>
+			</if>
+			<if test="searchWrd != null and !searchWrd.equals('')">
+			<if test="searchCnd == 1">
+				<![CDATA[ AND a.NTT_SJ LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>
+			<if test="searchCnd == 2">
+				<![CDATA[ AND a.NTT_CN LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>	
+			<if test="searchCnd == 3">
+				<![CDATA[ AND a.NTCR_NM LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>
+			<if test="searchCnd == 4">
+				<![CDATA[ AND a.NTT_REGDT LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>
+			<if test="searchCnd == 0">
+				<![CDATA[ AND (
+										a.NTT_SJ LIKE '%' + #{searchWrd} + '%'
+										OR a.NTT_CN LIKE '%' + #{searchWrd} + '%'
+										OR a.NTCR_NM LIKE '%' + #{searchWrd} + '%'
+										OR a.NTT_REGDT LIKE '%' + #{searchWrd} + '%'
+										) 		]]>
+			</if>
+			</if>				
+			<if test="searchUserId != null and !searchUserId.equals('')">
+			<![CDATA[ AND ((a.NTCR_ID = #{searchUserId} AND REPLY_NO='0') OR REPLY_NO IN (SELECT NTT_ID FROM BBS_T WHERE NTCR_ID = #{searchUserId} AND USE_AT = 'Y'))	]]>
+			</if>
+		<![CDATA[			
+			) TB ) AAA WHERE rn BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
+		]]>				
+	</select>	
+
+	<select id="selectBoardArtExtListCnt" parameterType="BoardManageVO" resultType="java.lang.Integer" >
+		<![CDATA[
+			SELECT
+				COUNT(a.NTT_ID)
+			FROM
+				BBS_T a
+			LEFT OUTER JOIN 
+				BBS_EXT e
+			ON a.BBS_ID = e.BBS_ID AND a.NTT_ID = e.NTT_ID 
+			LEFT OUTER JOIN 
+				V_USER_MASTER b
+			ON a.REGID = b.USER_ID 
+			WHERE
+				a.BBS_ID = #{bbsId} AND a.USE_AT IN('Y','T')
+		]]>
+			<if test='(bbsId.equals("BBS_0007") or bbsId.equals("BBS_0013")) and nttCat != null and !nttCat.equals("")'>
+				AND A.NTT_CAT IN (SELECT MV_IDX FROM LECTURE_T WHERE MV_SUBJECT LIKE '%' + #{nttCat} + '%')
+			</if>
+			<if test='!searchOp6.equals("")'>
+				<![CDATA[ AND A.NTT_CAT = #{searchOp6} ]]>
+			</if>
+			<if test='!searchOp7.equals("")'>
+				<![CDATA[ AND ISNULL(A.NTT_HIDDEN,'N') = #{searchOp7} ]]>
+			</if>
+			<if test='!searchSdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) >= #{searchSdt} ]]>
+			</if>
+			<if test='!searchEdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) <= #{searchEdt} ]]>
+			</if>
+			<if test="searchWrd != null and !searchWrd.equals('')">
+			<if test="searchCnd == 1">
+				<![CDATA[ AND a.NTT_SJ LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>
+			<if test="searchCnd == 2">
+				<![CDATA[ AND a.NTT_CN LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>	
+			<if test="searchCnd == 3">
+				<![CDATA[ AND a.NTCR_NM LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>
+			<if test="searchCnd == 4">
+				<![CDATA[ AND a.NTT_REGDT LIKE '%' + #{searchWrd} + '%' 		]]>
+			</if>
+			<if test="searchCnd == 0">
+				<![CDATA[ AND (
+										a.NTT_SJ LIKE '%' + #{searchWrd} + '%'
+										OR a.NTT_CN LIKE '%' + #{searchWrd} + '%'
+										OR a.NTCR_NM LIKE '%' + #{searchWrd} + '%'
+										OR a.NTT_REGDT LIKE '%' + #{searchWrd} + '%'
+										) 		]]>
+			</if>
+			</if>				
+			<if test="searchUserId != null and !searchUserId.equals('')">
+			<![CDATA[ AND ((a.NTCR_ID = #{searchUserId} AND REPLY_NO='0') OR REPLY_NO IN (SELECT NTT_ID FROM BBS_T WHERE NTCR_ID = #{searchUserId} AND USE_AT = 'Y'))	]]>
+			</if>
+	</select>	
+ 
+	<select id="selectBoardArticle" parameterType="BoardManageVO" resultType="BoardManageVO">
+			SELECT
+				a.BBS_ID, a.NTT_ID
+			,	a.NTT_SJ, a.NTCR_ID, a.NTCR_NM, a.NTT_NO, a.NTT_CN
+			,	a.NTT_PSW, a.REGID 
+			,	CONVERT(VARCHAR(10),a.REGDT, 120) AS REGDT
+			,	a.RDCNT 
+			,	a.USE_AT
+			,	a.REPLY_NO, a.REPLY_AT, a.REPLY_LC, a.SORT_ORDR
+			,	c.REP_YN
+			,	c.FILE_YN, c.FILE_CNT, c.BBS_NM
+			,	a.NTT_SEQ
+			,	a.NTT_LOCK
+			,	a.NTT_TOP, a.NTT_CAT
+				<![CDATA[
+			,	(CASE WHEN ISNULL(a.NTT_CAT,'') <> '' THEN DBO.GETCODENAME(c.CATE_CD,a.NTT_CAT) ELSE '' END) NTT_CAT_NM
+				]]>		           
+			<if test='bbsId.equals("BBS_0007") or bbsId.equals("BBS_0013")'>
+			,	(SELECT MV_SUBJECT FROM LECTURE_T WHERE MV_IDX = a.NTT_CAT) NTT_LEC_NM
+			</if>
+			<if test='bbsId.equals("BBS_0001") or bbsId.equals("BBS_0018")'>
+			,	DBO.GETLECNAME(a.NTT_CAT) NTT_LEC_CD_NM
+			</if>
+			<if test='bbsId.equals("BBS_0009") or bbsId.equals("BBS_0010") or bbsId.equals("BBS_0011") or bbsId.equals("BBS_0012") or bbsId.equals("BBS_0013")'>
+			,	(SELECT TOP 1 NTT_CN FROM BBS_T WHERE USE_AT = 'Y' AND REPLY_NO = a.NTT_ID) AS REPLY_CN
+			,	(SELECT TOP 1 NTCR_NM FROM BBS_T WHERE USE_AT = 'Y' AND REPLY_NO = a.NTT_ID) AS REPLY_ID
+			,	(SELECT COUNT(NTT_ID) FROM BBS_T WHERE USE_AT = 'Y' AND REPLY_NO = a.NTT_ID) AS REPLY_CNT
+			</if>
+			,	a.NTT_MAIN
+			,	a.NTT_REGDT
+			,	a.NTT_HIDDEN
+			,	a.ATCH_FILE_ID
+			,	a.THUM_FILE_ID
+			,	a.NTT_LINK
+		<![CDATA[
+			,	(CASE WHEN a.BBS_ID = 'BBS_0010' AND ISNULL(a.THUM_FILE_ID,'') <> '' THEN (SELECT BM_PIC FROM BOOK_MA WHERE BM_IDX = a.THUM_FILE_ID) ELSE '' END) BM_PIC
+			,	(CASE WHEN a.BBS_ID = 'BBS_0010' AND ISNULL(a.THUM_FILE_ID,'') <> '' THEN (SELECT BM_SUBJECT FROM BOOK_MA WHERE BM_IDX = a.THUM_FILE_ID) ELSE '' END) BM_SUBJECT
+			,	a.REGIP
+			FROM
+				BBS_T a WITH(NOLOCK)
+			LEFT OUTER JOIN 
+				BBS_MASTER c WITH(NOLOCK)
+				ON a.BBS_ID = c.BBS_ID			
+			WHERE
+				a.BBS_ID = #{bbsId}
+			AND
+				a.NTT_ID = #{nttId}	
+		]]>	
+			<if test="searchUserId != null and !searchUserId.equals('')">
+			<![CDATA[	a.NTCR_ID = #{searchUserId} ]]>
+			</if>
+	</select> 
+ 
+	<select id="selectBoardExtField" parameterType="BoardManageVO" resultType="BoardManageVO">
+		<![CDATA[
+			SELECT
+					e.BBS_ID,
+					e.NTT_ID,
+					e.B_EXT1,
+					e.B_EXT2,
+					e.B_EXT3,
+					e.B_EXT4,
+					e.B_EXT5,
+					e.B_EXT6,
+					e.B_EXT7,
+					e.B_EXT8,
+					e.B_EXT9,
+					e.B_EXT10
+			FROM
+				BBS_EXT e
+			WHERE
+				e.BBS_ID = #{bbsId}
+			AND
+				e.NTT_ID = #{nttId}
+		]]>	
+	</select> 
+ 
+ 	<select id="selectMaxNttId" resultType="java.lang.Long">
+ 		<![CDATA[
+			SELECT TOP 1 ISNULL(NTT_ID,0)+1 AS NTT_ID FROM BBS_T WITH (UPDLOCK) WHERE NTT_ID=(SELECT MAX(NTT_ID) AS NTT_ID  FROM BBS_T)
+ 		]]>
+ 	</select>
+ 	
+	<select id="selectNoticeListForSort" parameterType="BoardManageVO" resultType="egovMap">
+		<![CDATA[			
+			SELECT
+				a.BBS_ID, a.NTT_ID, a.SORT_ORDR, a.REPLY_NO, a.NTT_NO, a.REPLY_LC
+			FROM
+				BBS_T a	
+			WHERE
+				a.BBS_ID = #{bbsId}
+			AND
+				a.SORT_ORDR = #{sortOrdr}
+			ORDER BY  a.SORT_ORDR DESC, a.NTT_NO ASC	
+		]]>						
+	</select>
+
+	<insert id="insertBoardArticle" parameterType="BoardManageVO" >
+		<selectKey resultType="java.lang.Long" keyProperty="nttNo" order="BEFORE">
+			SELECT ISNULL(MAX(SORT_ORDR),0)+1 AS NTT_NO  FROM BBS_T
+			WHERE BBS_ID = #{bbsId}
+		</selectKey>
+		<!-- selectkey -->
+		<![CDATA[
+			INSERT INTO BBS_T
+			(NTT_ID, BBS_ID, NTT_SJ, NTT_CN, SORT_ORDR, 
+			 NTCR_ID, NTCR_NM, NTCR_NICK, NTT_PSW, RDCNT, 
+			 REPLY_AT,  			   
+			 REPLY_NO, NTT_NO, REPLY_LC, USE_AT, 
+			 NTT_SEQ, NTT_LOCK, NTT_TOP, NTT_CAT, NTT_MAIN, NTT_REGDT, NTT_HIDDEN, NTT_LINK, 
+			 ATCH_FILE_ID, THUM_FILE_ID, REGID, REGDT, 
+			 MODDT, REGIP, PRE_NOTEID
+			 )
+			VALUES
+			( #{nttId}, #{bbsId}, #{nttSj}, #{nttCn}, #{nttNo}, 
+			  #{ntcrId}, #{ntcrNm}, #{ntcrNick}, #{nttPsw}, #{rdcnt}, 
+			  #{replyAt}, 
+			  #{replyNo}, 1, #{replyLc}, DBO.FNDECODE(#{useAt},'','Y',#{useAt}), 
+			  #{nttSeq}, #{nttLock}, #{nttTop}, #{nttCat}, #{nttMain}, #{nttRegdt}, #{nttHidden}, #{nttLink},
+			  #{atchFileId}, #{thumFileId}, #{regid}, DBO.FNDECODE(ISNULL(#{regdt},''),'',GETDATE(),#{regdt}),
+			  DBO.FNDECODE(ISNULL(#{moddt},''),'',GETDATE(),#{moddt}), #{regip}, #{preNoteid}
+			 )			
+		]]>
+	</insert>
+	
+	<insert id="replyBoardArticle" parameterType="BoardManageVO" >
+		<selectKey resultType="java.lang.Long" keyProperty="nttNo" order="BEFORE">
+			SELECT ISNULL(MAX(NTT_NO),0)+1 AS NTT_NO  FROM BBS_T
+			WHERE BBS_ID = #{bbsId} AND SORT_ORDR = #{sortOrdr}
+		</selectKey>			
+		<![CDATA[
+			INSERT INTO BBS_T
+			(NTT_ID, BBS_ID, NTT_SJ, NTT_CN, SORT_ORDR, 
+			 NTCR_ID, NTCR_NM, NTT_PSW, RDCNT, 
+			 REPLY_AT,  			   
+			 REPLY_NO, NTT_NO, REPLY_LC, ATCH_FILE_ID,
+			 USE_AT, NTT_SEQ, NTT_LOCK, NTT_TOP, NTT_CAT, NTT_MAIN, NTT_REGDT, NTT_HIDDEN, NTT_LINK,
+			 REGID, REGDT, REGIP, 
+			 PRE_NOTEID
+			 )
+			VALUES
+			( #{nttId}, #{bbsId}, #{nttSj}, #{nttCn}, #{sortOrdr}, 
+			  #{ntcrId}, #{ntcrNm}, #{nttPsw}, #{rdcnt}, 
+			  #{replyAt}, 
+			  #{replyNo}, 1, #{replyLc}, #{atchFileId},
+			  'Y', #{nttLock}, #{nttSeq}, #{nttTop}, #{nttCat}, #{nttMain}, #{nttRegdt}, #{nttHidden}, #{nttLink},
+			  #{regid}, DBO.FNDECODE(ISNULL(#{regdt},''),'',GETDATE(),#{regdt}), #{regip},  
+			  #{preNoteid}
+			 )			
+		]]>
+	</insert>	
+	
+	<insert id="replyBoardExtField" parameterType="BoardManageVO" >
+		<![CDATA[
+			INSERT INTO BBS_EXT
+			(
+					NTT_ID
+				,	BBS_ID
+			)
+			VALUES
+			(
+					#{nttId}
+				,	#{bbsId}
+			 )			
+		]]>
+	</insert>	
+	
+	<insert id="insertBoardExtField" parameterType="BoardManageVO" >
+		<![CDATA[
+			INSERT INTO BBS_EXT
+			(
+					NTT_ID
+				,	BBS_ID
+				,	B_EXT1
+				,	B_EXT2
+				,	B_EXT3
+				,	B_EXT4
+				,	B_EXT5
+				,	B_EXT6
+				,	B_EXT7
+				,	B_EXT8
+				,	B_EXT9
+				,	B_EXT10
+			)
+			VALUES
+			(
+					#{nttId}
+				,	#{bbsId}
+				,	#{bExt1}
+				,	#{bExt2}
+				,	#{bExt3}
+				,	#{bExt4}
+				,	#{bExt5}
+				,	#{bExt6}
+				,	#{bExt7}
+				,	#{bExt8}
+				,	#{bExt9}
+				,	#{bExt10}
+			 )			
+		]]>
+	</insert>	
+	
+ 	<update id="updateBoardArticle" parameterType="BoardManageVO">
+ 		<![CDATA[
+			UPDATE BBS_T SET 
+				NTT_SJ = #{nttSj},
+				NTT_CN = #{nttCn}, 		
+				MODID = #{modid},
+				ATCH_FILE_ID = #{atchFileId},
+				MODDT = GETDATE(),
+				USE_AT = DBO.FNDECODE(#{useAt},'',USE_AT,#{useAt}), 
+				NTT_SEQ = #{nttSeq}, 
+				NTT_LOCK = #{nttLock}, 
+				NTT_TOP = #{nttTop}, 
+				NTT_CAT = #{nttCat} ,
+				NTT_MAIN = #{nttMain}, 
+				NTT_REGDT = #{nttRegdt}, 
+				NTT_HIDDEN = #{nttHidden},
+				THUM_FILE_ID = #{thumFileId},
+				NTT_LINK = #{nttLink}
+	 	]]>	
+	 	<if test="nttLock.equals('N')">
+	 		<if test="nttPsw != null || !nttPsw.equals('')">
+			<![CDATA[	, NTT_PSW = #{nttPsw}	]]>
+			</if>
+		</if>
+	 	<if test="nttLock.equals('Y')">
+			<![CDATA[	, NTT_PSW = #{nttPsw}	]]>
+		</if>
+		
+		<![CDATA[
+			WHERE BBS_ID = #{bbsId}
+			AND NTT_ID = #{nttId}
+ 		]]>
+
+ 		
+ 	</update>
+ 	
+ 	<update id="updateBoardArticleThumNull" parameterType="BoardManageVO">
+ 		<![CDATA[
+			UPDATE BBS_T SET 
+				THUM_FILE_ID = ''
+	 	]]>	
+	 	<if test="nttLock.equals('N')">
+	 		<if test="nttPsw != null || !nttPsw.equals('')">
+			<![CDATA[	, NTT_PSW = #{nttPsw}	]]>
+			</if>
+		</if>
+	 	<if test="nttLock.equals('Y')">
+			<![CDATA[	, NTT_PSW = #{nttPsw}	]]>
+		</if>
+		
+		<![CDATA[
+			WHERE THUM_FILE_ID = #{thumFileId}
+			AND NTT_ID = #{nttId}
+ 		]]>
+
+ 		
+ 	</update>
+
+ 	<update id="updateBoardExtField" parameterType="BoardManageVO">
+ 		<![CDATA[
+ 		MERGE BBS_EXT AS A
+ 		USING (SELECT #{nttId} NTT_ID, #{bbsId} BBS_ID) AS B
+ 		ON (A.NTT_ID = B.NTT_ID AND A.BBS_ID = B.BBS_ID)
+ 		WHEN NOT MATCHED THEN
+			INSERT
+			(
+					NTT_ID
+				,	BBS_ID
+				,	B_EXT1
+				,	B_EXT2
+				,	B_EXT3
+				,	B_EXT4
+				,	B_EXT5
+				,	B_EXT6
+				,	B_EXT7
+				,	B_EXT8
+				,	B_EXT9
+				,	B_EXT10
+			)
+			VALUES
+			(
+					#{nttId}
+				,	#{bbsId}
+				,	#{bExt1}
+				,	#{bExt2}
+				,	#{bExt3}
+				,	#{bExt4}
+				,	#{bExt5}
+				,	#{bExt6}
+				,	#{bExt7}
+				,	#{bExt8}
+				,	#{bExt9}
+				,	#{bExt10}
+			 )			
+ 		WHEN MATCHED THEN
+			UPDATE SET 
+				B_EXT1 = #{bExt1},
+				B_EXT2 = #{bExt2},
+				B_EXT3 = #{bExt3},
+				B_EXT4 = #{bExt4},
+				B_EXT5 = #{bExt5},
+				B_EXT6 = #{bExt6},
+				B_EXT7 = #{bExt7},
+				B_EXT8 = #{bExt8},
+				B_EXT9 = #{bExt9},
+				B_EXT10 = #{bExt10}
+				;
+ 		]]>
+ 	</update>
+
+ 	<update id="deleteBoardArticle" parameterType="BoardManageVO">
+ 		<![CDATA[
+			UPDATE BBS_T SET 
+				NTT_SJ = #{nttSj},
+				USE_AT = 'N',
+				MODID = #{modid},
+				MODDT = GETDATE()
+			WHERE BBS_ID = #{bbsId}
+			AND NTT_ID = #{nttId}
+ 		]]>
+ 	</update>
+
+ 	<delete id="deleteBoardExtField" parameterType="BoardManageVO">
+ 		<![CDATA[
+			DELETE FROM BBS_EXT
+			WHERE BBS_ID = #{bbsId}
+			AND NTT_ID = #{nttId}
+ 		]]>
+ 	</delete>
+
+ 	<select id="selectMaxInqireCo" resultType="java.lang.Integer" parameterType="BoardManageVO">
+ 		<![CDATA[
+			SELECT ISNULL(MAX(RDCNT),0)+1 AS RDCNT FROM BBS_T
+			WHERE BBS_ID = #{bbsId}
+			AND NTT_ID = #{nttId}
+ 		]]>
+ 	</select>
+ 	
+ 	<select id="selectNoticeItemForSort" resultType="java.lang.Long" parameterType="BoardManageVO">
+ 		<![CDATA[
+			SELECT
+				ISNULL(MAX(NTT_NO),0)+1 AS NTT_NO
+			FROM
+				BBS_T
+			WHERE
+				BBS_ID = #{bbsId}
+			AND
+				SORT_ORDR = #{sortOrdr}
+			AND 
+				NTT_ID = #{nttId}
+ 		]]>
+ 	</select> 	
+
+ 	<update id="updateInqireCo" parameterType="BoardManageVO">
+ 		<![CDATA[
+			UPDATE BBS_T SET 
+				RDCNT = #{rdcnt},
+				MODID = #{modid},
+				MODDT = GETDATE()
+			WHERE BBS_ID = #{bbsId}
+			AND NTT_ID = #{nttId}
+ 		]]>
+ 	</update>
+
+	<update id="updateSortOrder" parameterType="BoardManageVO">
+ 		<![CDATA[
+			UPDATE BBS_T SET 
+				NTT_NO = #{nttNo}
+			WHERE NTT_ID = #{nttId}
+ 		]]>	
+	</update>
+
+	<select id="selectGuestList" parameterType="BoardManageVO" resultType="egovMap">
+		<![CDATA[
+		SELECT * FROM ( SELECT ROW_NUMBER() OVER(ORDER BY TB.SORT_ORDR DESC, TB.NTT_NO ASC) rn, TB.* FROM (
+			SELECT
+				a.NTT_ID, a.SORT_ORDR, a.NTT_SJ, a.NTCR_NM, a.NTT_PSW, 
+				CONVERT(VARCHAR,a.REGDT, 120)
+				as REGDT,
+				a.NTT_CN, a.USE_AT, a.BBS_ID, b.USER_NM as FRST_REGISTER_NM, a.REGID
+			FROM
+				BBS_T a, V_USER_MASTER b
+			WHERE
+				a.BBS_ID = #{bbsId}
+			AND 
+				a.REGID = b.USER_ID
+			AND
+				a.USE_AT = 'Y'
+			) TB ) AAA WHERE rn BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
+		]]>				
+	</select>	
+	
+	<select id="selectGuestListCnt" parameterType="BoardManageVO" resultType="java.lang.Integer" >
+		<![CDATA[
+			SELECT
+				COUNT(NTT_ID)
+			FROM
+				BBS_T 
+			WHERE
+				BBS_ID = #{bbsId}
+			AND
+				USE_AT = 'Y'
+		]]>			
+	</select>	
+
+	<update id="deleteGuestList" parameterType="BoardManageVO">
+		<![CDATA[
+			UPDATE BBS_T
+			SET USE_AT = 'N'
+			WHERE BBS_ID = #{bbsId}
+			AND NTT_ID = #{nttId}
+		]]>			
+	</update>	
+	
+	<select id="getPasswordInf" parameterType="BoardManageVO" resultType="java.lang.String">
+		<![CDATA[
+			SELECT
+				NTT_PSW
+			FROM
+				BBS_T	
+			WHERE BBS_ID = #{bbsId}
+			AND NTT_ID = #{nttId}
+		]]>
+	</select>
+
+	<select id="getParentNttNo" parameterType="BoardManageVO" resultType="java.lang.Long">
+		<![CDATA[
+			SELECT NTT_NO FROM BBS_T
+			WHERE BBS_ID = #{bbsId} AND NTT_ID = #{replyNo}	
+		]]>
+	</select>
+
+ 	<update id="updateOtherNttNo" parameterType="BoardManageVO">
+ 		<![CDATA[
+			UPDATE BBS_T SET 
+				-- NTT_NO = NTT_NO + 1
+				NTT_NO = DBO.FNDECODE(ISNULL(PRE_NOTEID,''),'',NTT_NO + 1,REPLY_LC+1)
+			WHERE BBS_ID = #{bbsId} AND SORT_ORDR = #{sortOrdr}
+			AND NTT_NO > #{nttNo}
+ 		]]>
+ 	</update>
+ 	
+ 	 <update id="updateNttNo" parameterType="BoardManageVO">
+ 		<![CDATA[
+			UPDATE BBS_T SET 
+				-- NTT_NO = {nttNo}
+				NTT_NO = DBO.FNDECODE(ISNULL(PRE_NOTEID,''),'',#{nttNo},REPLY_LC+1)
+			WHERE BBS_ID = #{bbsId}
+			AND NTT_ID = #{nttId}
+ 		]]>
+ 	</update>
+
+ 	<update id="updateAnswerLc" parameterType="BoardManageVO">
+ 		<![CDATA[
+			UPDATE BBS_T SET 
+				REPLY_LC = #{nttId}
+			WHERE BBS_ID = #{bbsId} AND NTT_ID= #{replyNo}
+ 		]]>
+ 	</update> 	
+
+ 	<update id="updateBoardSeqSwitch" parameterType="BoardManageVO">
+ 		<![CDATA[
+		BEGIN TRAN
+			UPDATE BBS_T SET 
+				NTT_SEQ = (SELECT NTT_SEQ FROM BBS_T WHERE BBS_ID = #{bbsId} AND NTT_ID= #{preBoardId})
+			WHERE BBS_ID = #{bbsId} AND NTT_ID= #{nttId};
+			UPDATE BBS_T SET 
+				NTT_SEQ = #{nttSeq}
+			WHERE BBS_ID = #{bbsId} AND NTT_ID= #{preBoardId};
+		COMMIT TRAN;
+ 		]]>
+ 	</update> 	
+
+
+	<select id="selectBoardArticleCheckCnt" parameterType="BoardManageVO" resultType="java.lang.Integer" >
+			SELECT COUNT(NTT_ID) FROM BBS_T
+			WHERE BBS_ID = #{bbsId} AND PRE_NOTEID = #{preNoteid}		
+			<if test='replyAt.equals("Y")'>
+				AND REPLY_AT = 'Y'
+			</if>	
+	</select>
+	
+</mapper>

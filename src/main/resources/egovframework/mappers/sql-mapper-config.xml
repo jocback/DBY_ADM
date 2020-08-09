@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+
+<configuration>
+
+	<!--Mybatis 설정 -->
+	<settings>
+		<!-- 전통적인 데이터베이스 컬럼명 형태인 A_COLUMN을 CamelCase형태의 자바 프로퍼티명 형태인 aColumn으로 자동으로 매핑하도록 함 -->
+		<setting name="mapUnderscoreToCamelCase" value="true"></setting>
+		<!--  파라미터에 Null 값이 있을 경우 에러 처리 -->
+		<setting name="jdbcTypeForNull" value="VARCHAR"></setting>
+	</settings>
+	
+    <typeAliases>
+		<typeAlias alias="egov.sqlSession" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+
+		<typeAlias  alias="egovMap" type="egovframework.rte.psl.dataaccess.util.EgovMap"/>
+		<typeAlias  alias="FileVO" type="egovframework.com.cmm.service.FileVO"/>
+		<typeAlias  alias="ActManageSearchVO" type="egovframework.MUSE_ADMIN.service.ActManageDefaultVO"/>	
+		<typeAlias  alias="ActMembManageVO" type="egovframework.MUSE_ADMIN.service.ActMembManageVO"/>	
+		<typeAlias  alias="ComDefaultCodeVO" type="egovframework.com.cmm.ComDefaultCodeVO"/>
+		<typeAlias  alias="ActLecCodeManageVO" type="egovframework.MUSE_ADMIN.service.ActLecCodeManageVO"/>
+		<typeAlias  alias="BoardMasterVO" type="egovframework.MUSE_Rte.cop.bbs.service.BoardMasterVO"/>
+		<typeAlias  alias="BoardManageVO" type="egovframework.MUSE_Rte.cop.bbs.service.BoardManageVO"/>
+		<typeAlias  alias="BoardCmtVO" type="egovframework.MUSE_Rte.cop.bbs.service.BoardCmtVO"/>
+		<typeAlias  alias="ActBannerManageVO" type="egovframework.MUSE_ADMIN.service.ActBannerManageVO"/>	
+		<typeAlias  alias="ActEmpManageVO" type="egovframework.MUSE_ADMIN.service.ActEmpManageVO"/>	
+		<typeAlias  alias="ActGroupManageVO" type="egovframework.MUSE_ADMIN.service.ActGroupManageVO"/>	
+		<typeAlias  alias="ActOrgManageVO" type="egovframework.MUSE_ADMIN.service.ActOrgManageVO"/>	
+		<typeAlias  alias="ActStatsManageVO" type="egovframework.MUSE_Rte.sym.log.wlg.service.WebLog"/>	
+		<typeAlias  alias="ActTeamsManageVO" type="egovframework.MUSE_ADMIN.service.ActTeamsManageVO"/>	
+		<typeAlias  alias="ActBookManageVO" type="egovframework.MUSE_ADMIN.service.ActBookManageVO"/>	
+		<typeAlias  alias="CmmnCode"   type="egovframework.MUSE_Rte.sym.ccm.cca.service.CmmnCode"/>
+		<typeAlias  alias="CmmnCodeVO" type="egovframework.MUSE_Rte.sym.ccm.cca.service.CmmnCodeVO"/>
+		<typeAlias  alias="CmmnDetailCode"   type="egovframework.com.cmm.service.CmmnDetailCode"/>
+		<typeAlias  alias="webLog" type="egovframework.MUSE_Rte.sym.log.wlg.service.WebLog"/>
+	    <typeAlias  alias="LoginPolicy" type="egovframework.MUSE_Rte.uat.uap.service.LoginPolicy"/>
+	    <typeAlias  alias="LoginPolicyVO" type="egovframework.MUSE_Rte.uat.uap.service.LoginPolicyVO"/>
+		<typeAlias  alias="loginVO" type="egovframework.com.cmm.LoginVO"/>
+		<typeAlias  alias="FaqManageSearchVO" type="egovframework.MUSE_Rte.uss.olh.faq.service.FaqManageDefaultVO"/>	
+		<typeAlias  alias="comDefaultVO" type="egovframework.com.cmm.ComDefaultVO"/>
+		<typeAlias  alias="PopupManageVO" type="egovframework.MUSE_Rte.uss.ion.pwm.service.PopupManageVO" />
+
+    </typeAliases>
+
+</configuration>
+

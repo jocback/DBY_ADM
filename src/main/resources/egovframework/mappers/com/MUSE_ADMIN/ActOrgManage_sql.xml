@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ActOrgManage">
+
+	<select id="selectActOrgList" parameterType="ActManageSearchVO" resultType="egovMap">
+<!-- 	 AND EMPLYR_STTUS_CODE = 'P' AND A.EMPLYR_ID = B.EMP_NO(+) -->
+		<![CDATA[
+			SELECT  *
+			FROM
+			(SELECT  ROW_NUMBER() OVER(ORDER BY ACT.ORG_CD ASC, ACT.POS_NO DESC) RNUM,ACT.*
+						FROM
+				(SELECT  
+							EMP_NO
+						,	EMP_NM
+						,	ORG_CD
+						,	PSN_CD
+						,	DBO.GETCODENAME('COM052',SUBSTRING(ORG_CD,1,4)) ORG_CD_NM1
+						,	DBO.GETCODENAME('COM053',ORG_CD) ORG_CD_NM2
+						,	DBO.GETCODENAME('COM045',PSN_CD) PSN_CD_NM
+						,	TEL_NO
+						,	HP_NO
+						,	EMAIL
+						,	EMP_WORK
+						,	EMP_MEMO
+						,	POS_NO
+						,	USEYN
+						,	MODEMP
+						,	CONVERT(VARCHAR(10), A.REGDT, 120) REGDT
+						,	CONVERT(VARCHAR(10), A.MODDT, 120) MODDT
+			FROM	  INFO_EMP A
+			WHERE   1=1 AND DELDT IS NULL
+		]]>					
+			<if test="searchKeyword != null and !searchKeyword.equals('')">
+				<if test='searchCnd.equals("all")'>
+				<![CDATA[	(A.EMP_NO LIKE '%' + #{searchKeyword} + '%' OR A.EMP_NM LIKE '%' + #{searchKeyword} + '%') ]]>
+				</if>
+				<if test='searchCnd.equals("actempId")'>
+				<![CDATA[	A.EMP_NO LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("actEmpnm")'>
+				<![CDATA[	A.EMP_NM LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+			</if>
+			<![CDATA[	) ACT) AAA	WHERE RNUM  BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}			]]>			
+	</select>
+	
+	<select id="selectActOrgListTotCnt" parameterType="ActManageSearchVO" resultType="int">
+		<![CDATA[
+			SELECT 	COUNT(*) totcnt
+			FROM	  INFO_EMP A
+			WHERE   1=1 AND DELDT IS NULL
+		]]>					
+			<if test="searchKeyword != null and !searchKeyword.equals('')">
+				<if test='searchCnd.equals("all")'>
+				<![CDATA[	(A.EMP_NO LIKE '%' + #{searchKeyword} + '%' OR A.EMP_NM LIKE '%' + #{searchKeyword} + '%') ]]>
+				</if>
+				<if test='searchCnd.equals("actempId")'>
+				<![CDATA[	A.EMP_NO LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("actEmpnm")'>
+				<![CDATA[	A.EMP_NM LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+			</if>
+	</select>
+	
+	<select id="selectActOrgDetail" resultType="egovMap">
+		<![CDATA[		
+				SELECT
+							EMP_NO
+						,	EMP_NM
+						,	ISNULL(A.ORG_CD,'') ORG_CD
+						,	PSN_CD
+						,	TEL_NO
+						,	HP_NO
+						,	EMAIL
+						,	EMP_WORK
+						,	EMP_MEMO
+						,	POS_NO
+						,	USEYN
+						,	MODEMP
+						,	CONVERT(VARCHAR(10), A.REGDT, 120) REGDT
+						,	CONVERT(VARCHAR(10), A.MODDT, 120) MODDT
+				FROM	  INFO_EMP A
+			WHERE   A.EMP_NO = #{empNo}
+		]]>
+	</select>
+	
+	<select id="selectActOrgInfoOne" parameterType="ActOrgManageVO" resultType="String">
+		<![CDATA[
+				SELECT 	ISNULL(${empField},'') LV
+				FROM	  INFO_EMP A
+				WHERE   1=1 AND DELDT IS NULL
+		]]>
+			<if test="empNo != null and !empNo.equals('')">
+			<![CDATA[	A.EMP_NO = #{empNo}	]]>
+			</if>
+	</select>
+	
+	<update id="updateActOrg">
+			UPDATE INFO_EMP SET
+					EMP_NM			=	#{empNm}
+				,	ORG_CD			=	#{orgCd}
+				,	PSN_CD			=	#{psnCd}
+				,	TEL_NO				=	#{telNo}
+				,	EMP_WORK		=	#{empWork}
+				,	USEYN				=	#{useyn}
+				,	MODEMP			=	#{modemp}
+				,	MODDT				=	GETDATE()
+			WHERE EMP_NO = #{empNo}
+	</update>
+	
+	<update id="updateActOrgSeq">
+			UPDATE INFO_EMP SET
+					POS_NO			=	#{posNo}
+				,	MODEMP			=	#{modemp}
+				,	MODDT				=	GETDATE()
+			WHERE EMP_NO = #{empNo}
+	</update>
+	
+	<delete id="deleteActOrg">
+			DELETE FROM INFO_EMP
+			WHERE EMP_NO = #{empNo}
+	</delete>
+	
+    <insert id="insertActOrg">
+        <![CDATA[
+		{CALL
+		DECLARE
+		BEGIN
+            INSERT INTO INFO_EMP 
+                (
+						EMP_NO
+					,	EMP_NM
+					,	ORG_CD
+					,	PSN_CD
+					,	TEL_NO
+					,	HP_NO
+					,	EMAIL
+					,	EMP_WORK
+					,	EMP_MEMO
+					,	POS_NO
+					,	MODEMP
+					,	REGDT
+				)
+            VALUES (
+						#empNo}
+					,	#{empNm}
+					,	#{orgCd}
+					,	#{psnCd}
+					,	#{telNo}
+					,	#{hpNo}
+					,	#{email}
+					,	#{empWork}
+					,	#{empMemo}
+					,	(SELECT ISNULL(MAX(POS_NO),0)+1 FROM INFO_EMP WHERE ORG_CD = #{orgCd})
+					,	#{modemp}
+					,	GETDATE()
+				);
+			COMMIT;
+		END
+		}
+        ]]>
+    </insert>
+    
+</mapper>

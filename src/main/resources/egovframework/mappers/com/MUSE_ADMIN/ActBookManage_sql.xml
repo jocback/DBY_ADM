@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ActBookManage">
+
+	<select id="selectActBookType" parameterType="ActManageSearchVO" resultType="egovMap">
+		<![CDATA[
+			SELECT
+							A.BM_IDX
+						,	A.BM_STA
+						,	A.BM_SHOW
+						,	A.BM_SOLD
+						,	A.BM_SUBJECT
+						,	A.BM_CONTENT
+						,	A.BM_AUTHOR
+						,	A.BM_PRESS
+						,	A.BM_PRICE1
+						,	A.BM_PRICE2
+						,	A.BM_PIC
+						,	A.BM_SITE1
+						,	A.BM_SITE2
+						,	A.BM_OP1
+						,	A.BM_OP2
+						,	A.BM_OP3
+						,	A.BM_OP4
+						,	A.BM_OP5
+						,	A.BM_OP6
+						,	CONVERT(VARCHAR(10), REGDT, 120) REGDT_C
+						,	A.REGDT
+						,	A.REGID
+			FROM	  BOOK_MA A
+			WHERE   BM_STA = '11'
+		]]>					
+			<if test='!searchOp1.equals("")'>
+				<![CDATA[ AND A.BM_IDX IN(SELECT SA.BM_IDX FROM BOOK_CT SA WHERE SA.LE_CODE = #{searchOp1}) ]]>
+			</if>
+			<if test='!searchOp2.equals("")'>
+				<![CDATA[ AND A.BM_IDX IN(SELECT SA.BM_IDX FROM BOOK_CT SA WHERE SA.CL_CODE = DBO.FNDECODE(#{searchOp2},'ALL','',#{searchOp2})) ]]>
+			</if>
+			<if test='!searchOp3.equals("")'>
+				<![CDATA[ AND ISNULL(A.BM_SHOW,'Y') = #{searchOp3} ]]>
+			</if>
+	</select>
+	
+	<select id="selectActBookList" parameterType="ActManageSearchVO" resultType="egovMap">
+		<![CDATA[
+			SELECT  *
+			FROM
+			(SELECT  ROW_NUMBER() OVER(ORDER BY ACT.REGDT DESC, ACT.BM_SUBJECT ASC) RNUM,ACT.*
+						FROM
+				(SELECT
+							A.BM_IDX
+						,	A.BM_STA
+						,	A.BM_SHOW
+						,	A.BM_SOLD
+						,	A.BM_SUBJECT
+						,	A.BM_CONTENT
+						,	A.BM_AUTHOR
+						,	A.BM_PRESS
+						,	A.BM_PRICE1
+						,	A.BM_PRICE2
+						,	A.BM_PIC
+						,	A.BM_SITE1
+						,	A.BM_SITE2
+						,	A.BM_OP1
+						,	A.BM_OP2
+						,	A.BM_OP3
+						,	A.BM_OP4
+						,	A.BM_OP5
+						,	A.BM_OP6
+						,	CONVERT(VARCHAR(10), REGDT, 120) REGDT_C
+						,	A.REGDT
+						,	A.REGID
+			FROM	  BOOK_MA A
+			WHERE   1=1 AND BM_STA = '11'
+		]]>					
+			<if test='!searchOp1.equals("")'>
+				<![CDATA[ AND A.BM_IDX IN(SELECT SA.BM_IDX FROM BOOK_CT SA WHERE SA.LE_CODE = #{searchOp1}) ]]>
+			</if>
+			<if test='!searchOp2.equals("")'>
+				<![CDATA[ AND A.BM_IDX IN(SELECT SA.BM_IDX FROM BOOK_CT SA WHERE SA.CL_CODE = DBO.FNDECODE(#{searchOp2},'ALL','',#{searchOp2})) ]]>
+			</if>
+			<if test='!searchOp3.equals("")'>
+				<![CDATA[ AND ISNULL(A.BM_SHOW,'Y') = #{searchOp3} ]]>
+			</if>
+			<if test="searchKeyword != null and !searchKeyword.equals('')">
+				<if test='searchCnd.equals("0")'>
+				<![CDATA[ AND (A.BM_SUBJECT LIKE '%' + #{searchKeyword} + '%' OR A.BM_PRESS LIKE '%' + #{searchKeyword} + '%') ]]>
+				</if>
+				<if test='searchCnd.equals("1")'>
+				<![CDATA[ AND A.BM_SUBJECT LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("2")'>
+				<![CDATA[ AND A.BM_AUTHOR LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("3")'>
+				<![CDATA[ AND A.BM_PRESS LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+			</if>
+			<![CDATA[	) ACT) AAA	WHERE RNUM  BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}		]]>			
+	</select>
+	
+	<select id="selectActBookListTotCnt" parameterType="ActManageSearchVO" resultType="int">
+		<![CDATA[
+			SELECT 	COUNT(*) totcnt
+			FROM	  BOOK_MA A
+			WHERE   1=1 AND BM_STA = '11'
+		]]>
+			<if test='!searchOp1.equals("")'>
+				<![CDATA[ AND A.BM_IDX IN(SELECT SA.BM_IDX FROM BOOK_CT SA WHERE SA.LE_CODE = #{searchOp1}) ]]>
+			</if>
+			<if test='!searchOp2.equals("")'>
+				<![CDATA[ AND A.BM_IDX IN(SELECT SA.BM_IDX FROM BOOK_CT SA WHERE SA.CL_CODE = DBO.FNDECODE(#{searchOp2},'ALL','',#{searchOp2})) ]]>
+			</if>
+			<if test='!searchOp3.equals("")'>
+				<![CDATA[ AND ISNULL(A.BM_SHOW,'Y') = #{searchOp3} ]]>
+			</if>
+			<if test="searchKeyword != null and !searchKeyword.equals('')">
+				<if test='searchCnd.equals("0")'>
+				<![CDATA[ AND (A.BM_SUBJECT LIKE '%' + #{searchKeyword} + '%' OR A.BM_PRESS LIKE '%' + #{searchKeyword} + '%') ]]>
+				</if>
+				<if test='searchCnd.equals("1")'>
+				<![CDATA[ AND A.BM_SUBJECT LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("2")'>
+				<![CDATA[ AND A.BM_AUTHOR LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("3")'>
+				<![CDATA[ AND A.BM_PRESS LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+			</if>
+	</select>
+	
+	<select id="selectActBookDetail" resultType="egovMap">
+		<![CDATA[		
+				SELECT
+							A.BM_IDX
+						,	A.BM_STA
+						,	A.BM_SHOW
+						,	A.BM_SOLD
+						,	A.BM_SUBJECT
+						,	A.BM_CONTENT
+						,	A.BM_AUTHOR
+						,	A.BM_PRESS
+						,	A.BM_PRICE1
+						,	A.BM_PRICE2
+						,	A.BM_PIC
+						,	A.BM_SITE1
+						,	A.BM_SITE2
+						,	A.BM_OP1
+						,	A.BM_OP2
+						,	A.BM_OP3
+						,	A.BM_OP4
+						,	A.BM_OP5
+						,	A.BM_OP6
+						,	A.REGDT
+						,	A.REGID
+				FROM	  BOOK_MA A
+			WHERE   A.BM_IDX = #{bmIdx}
+		]]>
+	</select>
+	
+	<update id="updateActBook">
+			UPDATE BOOK_MA SET
+						BM_STA				= ISNULL(#{bmSta},BM_STA)
+					,	BM_SHOW			= #{bmShow}
+					,	BM_SOLD			= #{bmSold}
+					,	BM_SUBJECT		= #{bmSubject}
+					,	BM_CONTENT	= #{bmContent}
+					,	BM_AUTHOR		= #{bmAuthor}
+					,	BM_PRESS			= #{bmPress}
+					,	BM_PRICE1		= #{bmPrice1}
+					,	BM_PRICE2		= #{bmPrice2}
+					,	BM_PIC				= #{bmPic}
+					,	BM_SITE1			= #{bmSite1}
+					,	BM_SITE2			= #{bmSite2}
+					,	BM_OP1				= #{bmOp1}
+					,	BM_OP2				= #{bmOp2}
+					,	BM_OP3				= #{bmOp3}
+					,	BM_OP4				= #{bmOp4}
+					,	BM_OP5				= #{bmOp5}
+					,	BM_OP6				= #{bmOp6}
+					,	MODDT				= GETDATE()
+					,	MODID				= #{modid}
+			WHERE BM_IDX = #{bmIdx}
+	</update>
+	
+	<select id="selectActBookMaxIdx" resultType="String">
+		<![CDATA[
+			SELECT ISNULL(MAX(BM_IDX),0)+1 FROM BOOK_MA
+		]]>
+	</select>
+	
+    <insert id="insertActBook">
+        <![CDATA[
+            INSERT INTO BOOK_MA 
+                (   BM_IDX
+				,	BM_STA
+				,	BM_SHOW
+				,	BM_SOLD
+				,	BM_SUBJECT
+				,	BM_CONTENT
+				,	BM_AUTHOR
+				,	BM_PRESS
+				,	BM_PRICE1
+				,	BM_PRICE2
+				,	BM_PIC
+				,	BM_SITE1
+				,	BM_SITE2
+				,	BM_OP1
+				,	BM_OP2
+				,	BM_OP3
+				,	BM_OP4
+				,	BM_OP5
+				,	BM_OP6
+				,	REGDT
+				,	REGID
+				)
+            VALUES (
+                   #{bmIdx}
+				,	'11'
+				,	#{bmShow}
+				,	#{bmSold}
+				,	#{bmSubject}
+				,	#{bmContent}
+				,	#{bmAuthor}
+				,	#{bmPress}
+				,	#{bmPrice1}
+				,	#{bmPrice2}
+				,	#{bmPic}
+				,	#{bmSite1}
+				,	#{bmSite2}
+				,	#{bmOp1}
+				,	#{bmOp2}
+				,	#{bmOp3}
+				,	#{bmOp4}
+				,	#{bmOp5}
+				,	#{bmOp6}
+				,	GETDATE()
+				,	#{regid}
+				);
+        ]]>
+    </insert>
+    
+    <insert id="deleteActBook">
+			UPDATE BOOK_MA SET
+					BM_STA				= '15'
+				,	MODDT		= GETDATE()
+				,	MODID		= #{modid}
+			WHERE BM_IDX = #{bmIdx}
+    </insert>
+    
+    <insert id="insertActBookCategory">
+        <![CDATA[
+        	MERGE BOOK_CT AS A
+	        	USING (SELECT #{bmIdx} AS BM_IDX, #{leCode} AS LE_CODE, #{clCode} AS CL_CODE) AS B
+		        	ON (A.BM_IDX = B.BM_IDX AND A.LE_CODE = B.LE_CODE AND ISNULL(A.CL_CODE,'') = ISNULL(B.CL_CODE,''))
+	        	WHEN MATCHED THEN
+		        	UPDATE SET DELDT = NULL, DELID = NULL
+	        	WHEN NOT MATCHED THEN
+		        	INSERT (CT_IDX, BM_IDX, LE_CODE, CL_CODE, REGDT, REGID)
+		        	VALUES ((SELECT ISNULL(MAX(CT_IDX),0)+1 FROM  BOOK_CT), #{bmIdx}, #{leCode}, #{clCode}, GETDATE(), #{regid})
+		        	;
+        ]]>
+    </insert>
+    
+    <insert id="deleteActBookCategory">
+			UPDATE BOOK_CT SET
+					DELDT		= GETDATE()
+				,	DELID		= #{modid}
+			WHERE BM_IDX = #{bmIdx}
+    </insert>
+    
+	<select id="selectActBookCategory" resultType="egovMap">
+		<![CDATA[
+			SELECT
+					A.CT_IDX
+				,	A.BM_IDX
+				,	A.LE_CODE
+				,	A.CL_CODE
+				,	(SELECT CODE_NM FROM LEC_CODE WHERE CODE_ID = A.LE_CODE AND DEL_DT IS NULL) AS LECODE_NM
+				,	(SELECT CODE_NM FROM LEC_CODE WHERE CODE_ID = A.CL_CODE AND DEL_DT IS NULL) AS CLCODE_NM
+			FROM	  BOOK_CT A
+			WHERE   BM_IDX = #{bmIdx} AND DELDT IS NULL
+			ORDER BY BM_IDX
+		]]>					
+	</select>
+	
+</mapper>

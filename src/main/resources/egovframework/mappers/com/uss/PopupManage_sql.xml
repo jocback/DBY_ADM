@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="PopupManage">
+
+	<!-- ::ResultMap 선언 -->
+	<resultMap id="PopupManageVOs" type="egovframework.MUSE_Rte.uss.ion.pwm.service.PopupManageVO">
+		<result property="popupId" 				column="POPUP_ID"/>
+		<result property="siteGb" 		column="SITE_GB"/>
+		<result property="popupTitleNm" 		column="POPUP_SJ_NM"/>
+		<result property="fileUrl" 				column="FILE_URL"/>
+		<result property="popupHlc" 			column="POPUP_VRTICL_LC"/>
+		<result property="popupWlc" 			column="POPUP_WIDTH_LC"/>
+		<result property="popupHSize" 			column="POPUP_VRTICL_SIZE"/>
+		<result property="popupWSize" 			column="POPUP_WIDTH_SIZE"/>
+		<result property="ntceBgnde" 			column="NTCE_BGNDE"/>
+		<result property="ntceEndde" 			column="NTCE_ENDDE"/>
+		<result property="stopVewAt" 			column="STOPVEW_SETUP_AT"/>
+		<result property="ntceAt" 				column="NTCE_AT"/>
+		<result property="popupType" 				column="POPUP_TYPE"/>
+		<result property="popupCn" 				column="POPUP_CN"/>
+		<result property="frstRegisterPnttm" 	column="FRST_REGIST_PNTTM"/>
+		<result property="frstRegisterId" 		column="FRST_REGISTER_ID"/>
+		<result property="lastUpdusrPnttm" 		column="LAST_UPDT_PNTTM"/>
+		<result property="lastUpdusrId" 		column="LAST_UPDUSR_ID"/>
+	</resultMap>
+
+	<!-- 팝업창관리:: 메인 게시물정보 -->
+	<select id="selectPopupManageMain" resultType="egovMap">
+	 <![CDATA[
+		SELECT
+			A.POPUP_ID,
+			A.SITE_GB,
+			A.POPUP_SJ_NM		    POPUP_TITLE_NM,
+			A.FILE_URL,
+			A.POPUP_VRTICL_LC,
+			A.POPUP_WIDTH_LC,
+			A.POPUP_VRTICL_SIZE,
+			A.POPUP_WIDTH_SIZE,
+			A.NTCE_BGNDE,
+			A.NTCE_ENDDE,
+			A.STOPVEW_SETUP_AT,
+			A.NTCE_AT,
+			A.POPUP_TYPE,
+			POPUP_CN,
+			CONVERT(VARCHAR(10),A.FRST_REGIST_PNTTM,120) FRST_REGIST_PNTTM,
+			(SELECT USER_NM FROM INFO_EMPLYR WHERE EMPLYR_ID = A.FRST_REGISTER_ID) FRST_REGISTER_NM
+		FROM POPUP_T A
+		WHERE 1=1
+		AND A.NTCE_AT = 'Y'
+		AND REPLACE(CONVERT(VARCHAR(8),GETDATE(),112)+CONVERT(VARCHAR(5), GETDATE(), 108),':','') >= NTCE_BGNDE
+		AND REPLACE(CONVERT(VARCHAR(8),GETDATE(),112)+CONVERT(VARCHAR(5), GETDATE(), 108),':','') <=  NTCE_ENDDE
+	 ]]>
+	</select>
+
+	<!-- 팝업창관리::목록조회 게시물정보 -->
+	<select id="selectPopupManage" resultType="egovMap">
+	<![CDATA[
+	SELECT *
+	FROM (
+	SELECT T0.*, ROW_NUMBER() OVER(ORDER BY T0.FRST_REGIST_PNTTM DESC) RNUM
+		FROM (
+	]]>
+	 <![CDATA[
+		SELECT
+			A.POPUP_ID,
+			A.SITE_GB,
+			A.POPUP_SJ_NM		    POPUP_TITLE_NM,
+			A.FILE_URL,
+			A.POPUP_VRTICL_LC,
+			A.POPUP_WIDTH_LC,
+			A.POPUP_VRTICL_SIZE,
+			A.POPUP_WIDTH_SIZE,
+			A.NTCE_BGNDE,
+			A.NTCE_ENDDE,
+			A.STOPVEW_SETUP_AT,
+			A.NTCE_AT,
+			A.POPUP_TYPE,
+			CONVERT(VARCHAR(10), A.FRST_REGIST_PNTTM, 120) FRST_REGIST_PNTTM,
+			(SELECT USER_NM FROM INFO_EMPLYR WHERE EMPLYR_ID = A.FRST_REGISTER_ID) FRST_REGISTER_NM
+		FROM POPUP_T A
+		WHERE 1=1
+	 ]]>
+	 <if test="searchKeyword != null and !searchKeyword.equals('')">
+		<if test='searchCondition.equals("POPUP_SJ_NM")'>
+			AND POPUP_SJ_NM LIKE '%' + #{searchKeyword} + '%'
+		</if>
+		<if test='searchCondition.equals("FILE_URL")'>
+			AND FILE_URL LIKE '%' + #{searchKeyword} + '%'
+		</if>
+	 </if>
+	<![CDATA[
+		) T0
+	) AAA
+	WHERE RNUM BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
+	]]>
+	</select>
+	<!-- 팝업창관리::목록조회_게시물 총갯수  -->
+	<select id="selectPopupManageCnt" resultType="int">
+		SELECT
+		COUNT(*) totcnt
+		FROM POPUP_T
+		WHERE 1=1
+	 <if test="searchKeyword != null and !searchKeyword.equals('')">
+		<if test='searchCondition.equals("POPUP_SJ_NM")'>
+			AND POPUP_SJ_NM LIKE '%' + #{searchKeyword} + '%'
+		</if>
+		<if test='searchCondition.equals("FILE_URL")'>
+			AND FILE_URL LIKE '%' + #{searchKeyword} + '%'
+		</if>
+	 </if>
+	</select>
+
+    <!-- 팝업창관리::삭제  -->
+	<delete id="deletePopupManage">
+		<![CDATA[
+			DELETE FROM POPUP_T
+			WHERE POPUP_ID=#{popupId}
+		]]>
+	</delete>
+
+	<!-- 팝업창관리::수정  -->
+	<update id="updatePopupManage">
+	 <![CDATA[
+		UPDATE POPUP_T
+		SET
+			SITE_GB=#{siteGb},
+			POPUP_SJ_NM=#{popupTitleNm},
+			FILE_URL=#{fileUrl},
+			POPUP_VRTICL_LC=#{popupHlc},
+			POPUP_WIDTH_LC=#{popupWlc},
+			POPUP_VRTICL_SIZE=#{popupHSize},
+			POPUP_WIDTH_SIZE=#{popupWSize},
+			NTCE_BGNDE=#{ntceBgnde},
+			NTCE_ENDDE=#{ntceEndde},
+			STOPVEW_SETUP_AT=#{stopVewAt},
+			NTCE_AT=#{ntceAt},
+			LAST_UPDT_PNTTM=GETDATE(),
+			LAST_UPDUSR_ID=#{lastUpdusrId},
+			POPUP_TYPE=#{popupType},
+			POPUP_CN=#{popupCn}
+		WHERE POPUP_ID=#{popupId}
+	 ]]>
+	</update>
+
+	<!-- 팝업창관리::상세보기 -->
+	<select id="selectPopupManageDetail" resultMap="PopupManageVOs">
+		SELECT
+			A.POPUP_ID,
+			A.SITE_GB,
+			A.POPUP_SJ_NM,
+			A.FILE_URL,
+			A.POPUP_VRTICL_LC,
+			A.POPUP_WIDTH_LC,
+			A.POPUP_VRTICL_SIZE,
+			A.POPUP_WIDTH_SIZE,
+			A.NTCE_BGNDE,
+			A.NTCE_ENDDE,
+			A.STOPVEW_SETUP_AT,
+			A.NTCE_AT,
+			A.POPUP_TYPE,
+			A.POPUP_CN,
+			A.FRST_REGIST_PNTTM,
+			A.FRST_REGISTER_ID,
+			A.LAST_UPDT_PNTTM,
+			A.LAST_UPDUSR_ID
+		FROM POPUP_T A
+		WHERE 1=1
+		AND A.POPUP_ID=#{popupId}
+	</select>
+
+	<!-- 팝업창관리::입력  -->
+	<insert id="insertPopupManage">
+	 <![CDATA[
+
+		INSERT INTO POPUP_T (
+			POPUP_ID,
+			SITE_GB,
+			POPUP_SJ_NM,
+			FILE_URL,
+			POPUP_VRTICL_LC,
+			POPUP_WIDTH_LC,
+			POPUP_VRTICL_SIZE,
+			POPUP_WIDTH_SIZE,
+			NTCE_BGNDE,
+			NTCE_ENDDE,
+			STOPVEW_SETUP_AT,
+			NTCE_AT,
+			POPUP_TYPE,
+			POPUP_CN,
+			FRST_REGIST_PNTTM,
+			FRST_REGISTER_ID,
+			LAST_UPDT_PNTTM,
+			LAST_UPDUSR_ID
+		)VALUES(
+			{popupId},
+			{siteGb},
+			{popupTitleNm},
+			{fileUrl},
+			{popupHlc},
+			{popupWlc},
+			{popupHSize},
+			{popupWSize},
+			{ntceBgnde},
+			{ntceEndde},
+			{stopVewAt},
+			{ntceAt},
+			{popupType},
+			{popupCn},
+			GETDATE(),
+			{frstRegisterId},
+			GETDATE(),
+			{lastUpdusrId}
+		)
+	 ]]>
+	</insert>
+
+</mapper>

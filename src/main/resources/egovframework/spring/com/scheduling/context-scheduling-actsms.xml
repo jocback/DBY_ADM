@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+	
+	<!-- 2주 이상된 장바구니, 신용카드 미결제 내역 삭제  -->
+	<bean id="actCartClear" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="actSchedulingController" />
+		<property name="targetMethod" value="deleteActOrderCartExpired" />
+		<property name="concurrent" value="false" />
+	</bean>
+
+	<bean id="actCartClearTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="actCartClear" />
+		<!-- 초 분 시 일 월 요일 연도, 연도는 생략 가능, ?는 무시한다는 뜻, 일에 *(모든것) 을 지정하고 특정요일을 지정하면 오류 발생 -->
+		<!-- 매일 오전 10시에 실행 -->
+		<property name="cronExpression" value="0 0 10 * * ?" />
+	</bean>
+
+	<!-- 2주 이상된 장바구니, 신용카드 미결제 내역 삭제 스케줄러 -->
+	<bean id="actCartClearScheduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="triggers">
+			<list>
+				<ref bean="actCartClearTrigger" />				
+			</list>
+		</property>
+	</bean>
+</beans>

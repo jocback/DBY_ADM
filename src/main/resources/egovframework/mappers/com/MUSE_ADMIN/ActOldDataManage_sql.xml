@@ -1,0 +1,953 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ActOldDataManageDAO">
+
+	<select id="selectActOldDataList" parameterType="BoardManageVO" resultType="BoardManageVO">
+			SELECT TOP 1000
+						sno													preNoteid
+					,	#{bbsId}											bbsId
+					,	name												ntcrId
+					,	name												ntcrNm
+					,	title													nttSj
+					,	''														nttCn
+					<if test='preBoardId.equals("study_pds") or preBoardId.equals("study_movie")'>
+					,	vod_sno											nttCat
+					</if>
+					<if test='!preBoardId.equals("study_pds") and !preBoardId.equals("study_movie")'>
+					,	''														nttCat
+					</if>
+					,	''														nttLink
+					,	(CASE WHEN part = 'com_pass' THEN 'Y' ELSE '' END)		extYn
+					,	(CASE WHEN part = 'com_pass' THEN tmp ELSE '' END)		bExt1
+					,	''														bExt2
+					,	''														bExt3
+					,	''														bExt4
+					,	img1													fileName
+					,	img1													atchFileId
+					,	reverse(substring(reverse([img1]),1,3)) fileExt
+					,	''														fileSize
+					,	id														regid
+					,	'N'														replyAt
+					,	convert(smalldatetime, 
+				                  left(case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end,charindex(' ',case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end,1)-1) 
+				                + ' ' 
+				                + right(case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end,charindex(' ',reverse(case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end),1)-1) 
+				                + case when charindex('오전',case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end,1) > 0 then 'AM' 
+				                                                                        else 'PM' 
+				                  end 
+				      )												regdt
+					,	left(wdate,10)									nttRegdt
+					,	cnt													rdcnt
+					,	(CASE b_notice WHEN 'y' then 'Y' ELSE '' END)				nttTop
+					,	(CASE b_view WHEN 'n' then 'Y' ELSE '' END)				nttHidden
+					,	''														nttMain
+					,	ip														regip
+			FROM
+				<if test='!bbsId.equals("BBS_0007") and !bbsId.equals("BBS_0008") and !bbsId.equals("BBS_0009") and !bbsId.equals("BBS_0010") and !bbsId.equals("BBS_0011") and !bbsId.equals("BBS_0013")'>
+				[DAEBANG].[dbo].[bbs] a
+				</if>
+				<if test='bbsId.equals("BBS_0008")'>
+				[DAEBANG].[dbo].[bbs2] a
+				</if>
+				<if test='bbsId.equals("BBS_0007")'>
+				[DAEBANG].[dbo].[bbs3] a
+				</if>
+				<if test='bbsId.equals("BBS_0013")'>
+				[DAEBANG].[dbo].[bbs4] a
+				</if>
+				<if test='bbsId.equals("BBS_0009") or bbsId.equals("BBS_0010") or bbsId.equals("BBS_0011")'>
+				[DAEBANG].[dbo].[bbs_counsel] a
+				</if>
+			WHERE
+				a.part = #{preBoardId}
+				<if test='bbsId.equals("BBS_0012") || bbsId.equals("BBS_0009") or bbsId.equals("BBS_0010") or bbsId.equals("BBS_0011") or bbsId.equals("BBS_0013")'>
+				AND depth = 0  AND (left(wdate,4) = '2018' OR  left(wdate,4) = '2019')
+				</if>
+				AND a.sno NOT IN(SELECT PRE_NOTEID FROM [DAEBANGYL].[dbo].[BBS_T] WHERE BBS_ID = #{bbsId} AND PRE_NOTEID IS NOT NULL)
+			ORDER BY a.sno ASC
+	</select>	
+	
+	<select id="selectActOldReplyDataList" parameterType="BoardManageVO" resultType="BoardManageVO">
+			SELECT TOP 1000
+						sno													preNoteid
+					,	#{bbsId}											bbsId
+					,	name												ntcrId
+					,	name												ntcrNm
+					,	title													nttSj
+					,	''														nttCn
+					<if test='preBoardId.equals("study_pds") or preBoardId.equals("study_movie")'>
+					,	vod_sno											nttCat
+					</if>
+					<if test='!preBoardId.equals("study_pds") and !preBoardId.equals("study_movie")'>
+					,	''														nttCat
+					</if>
+					,	''														nttLink
+					,	(CASE WHEN part = 'com_pass' THEN 'Y' ELSE '' END)		extYn
+					,	(CASE WHEN part = 'com_pass' THEN tmp ELSE '' END)		bExt1
+					,	''														bExt2
+					,	''														bExt3
+					,	''														bExt4
+					,	img1													fileName
+					,	img1													atchFileId
+					,	reverse(substring(reverse([img1]),1,3)) fileExt
+					,	''														fileSize
+					,	id														regid
+					,	convert(smalldatetime, 
+				                  left(case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end,charindex(' ',case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end,1)-1) 
+				                + ' ' 
+				                + right(case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end,charindex(' ',reverse(case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end),1)-1) 
+				                + case when charindex('오전',case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end,1) > 0 then 'AM' 
+				                                                                        else 'PM' 
+				                  end 
+				      )												regdt
+					,	left(wdate,10)									nttRegdt
+					,	cnt													rdcnt
+					,	(CASE b_notice WHEN 'y' then 'Y' ELSE '' END)				nttTop
+					,	(CASE b_view WHEN 'n' then 'Y' ELSE '' END)				nttHidden
+					,	''														nttMain
+					,	ip														regip
+					,	'Y'														replyAt
+					,	(SELECT SORT_ORDR FROM [DAEBANGYL].[dbo].[BBS_T] WHERE BBS_ID = #{bbsId} AND REPLY_AT = 'N' AND PRE_NOTEID = depth_r) sortOrdr
+					,	(SELECT NTT_ID FROM [DAEBANGYL].[dbo].[BBS_T] WHERE BBS_ID = #{bbsId} AND REPLY_AT = 'N' AND PRE_NOTEID = depth_r) replyNo
+					-- (select top 1 sno from [DAEBANG].[dbo].[bbs] where convert(varchar,convert(int,depth))+'|'+convert(varchar,depth_r) = convert(varchar,convert(int,a.depth)-1)+'|'+convert(varchar,a.depth_r))) replyNo
+					,	convert(int,depth)								replyLc
+			FROM
+				<if test='!bbsId.equals("BBS_0013")'>
+				[DAEBANG].[dbo].[bbs] a
+				</if>
+				<if test='bbsId.equals("BBS_0013")'>
+				[DAEBANG].[dbo].[bbs4] a
+				</if>
+			WHERE
+				a.part = #{preBoardId}
+				AND depth > 0  AND (left(wdate,4) = '2018' OR  left(wdate,4) = '2019')
+				AND a.sno NOT IN(SELECT PRE_NOTEID FROM [DAEBANGYL].[dbo].[BBS_T] WHERE BBS_ID = #{bbsId} AND PRE_NOTEID IS NOT NULL)
+				AND a.depth_r IN(SELECT PRE_NOTEID FROM [DAEBANGYL].[dbo].[BBS_T] WHERE BBS_ID = #{bbsId} AND PRE_NOTEID IS NOT NULL)
+			ORDER BY a.sno ASC
+	</select>	
+	
+	<select id="selectActOldQnaReplyDataList" parameterType="BoardManageVO" resultType="BoardManageVO">
+			SELECT TOP 500
+						sno													preNoteid
+					,	#{bbsId}											bbsId
+					,	r_name												ntcrId
+					,	r_name												ntcrNm
+					,	r_title												nttSj
+					,	r_memo											nttCn
+					,	(CASE WHEN part = 'my_counsel' THEN tmp ELSE '' END)		nttCat
+					,	''														nttLink
+					,	''														extYn
+					,	''														bExt1
+					,	''														bExt2
+					,	''														bExt3
+					,	''														bExt4
+					,	''														fileName
+					,	''														atchFileId
+					,	''														fileExt
+					,	''														fileSize
+					,	id														regid
+					,	convert(smalldatetime, 
+				                  left(case when len([r_date])=10 then r_date + ' 오전 1:00:00' else r_date end,charindex(' ',case when len([r_date])=10 then r_date + ' 오전 1:00:00' else r_date end,1)-1) 
+				                + ' ' 
+				                + right(case when len([r_date])=10 then r_date + ' 오전 1:00:00' else r_date end,charindex(' ',reverse(case when len([r_date])=10 then r_date + ' 오전 1:00:00' else r_date end),1)-1) 
+				                + case when charindex('오전',case when len([r_date])=10 then r_date + ' 오전 1:00:00' else r_date end,1) > 0 then 'AM' 
+				                                                                        else 'PM' 
+				                  end 
+				      )												regdt
+					,	left(r_date,10)									nttRegdt
+					,	cnt													rdcnt
+					,	''				nttTop
+					,	''				nttHidden
+					,	''														nttMain
+					,	''														regip
+					,	'Y'														replyAt
+					,	(SELECT SORT_ORDR FROM [DAEBANGYL].[dbo].[BBS_T] WHERE BBS_ID = #{bbsId} AND REPLY_AT = 'N' AND PRE_NOTEID = depth_r) sortOrdr
+					,	(SELECT NTT_ID FROM [DAEBANGYL].[dbo].[BBS_T] WHERE BBS_ID = #{bbsId} AND REPLY_AT = 'N' AND PRE_NOTEID = depth_r) replyNo
+					,	1														replyLc
+			FROM
+				[DAEBANG].[dbo].[bbs_counsel] a
+			WHERE
+				a.part = #{preBoardId}
+				AND (left(wdate,4) = '2018' OR  left(wdate,4) = '2019')
+				AND a.sno NOT IN(SELECT PRE_NOTEID FROM [DAEBANGYL].[dbo].[BBS_T] WHERE BBS_ID = #{bbsId} AND REPLY_AT = 'Y' AND PRE_NOTEID IS NOT NULL)
+			ORDER BY a.sno ASC
+	</select>	
+	
+ 	<update id="updateActOldDataCn">
+			UPDATE BBS_T SET 
+				NTT_CN = (
+			SELECT memo FROM
+				<if test='!bbsId.equals("BBS_0007") and !bbsId.equals("BBS_0008") and !bbsId.equals("BBS_0009") and !bbsId.equals("BBS_0010") and !bbsId.equals("BBS_0011") and !bbsId.equals("BBS_0013")'>
+				[DAEBANG].[dbo].[bbs] a
+				</if>
+				<if test='bbsId.equals("BBS_0008")'>
+				[DAEBANG].[dbo].[bbs2] a
+				</if>
+				<if test='bbsId.equals("BBS_0007")'>
+				[DAEBANG].[dbo].[bbs3] a
+				</if>
+				<if test='bbsId.equals("BBS_0013")'>
+				[DAEBANG].[dbo].[bbs4] a
+				</if>
+				<if test='bbsId.equals("BBS_0009") or bbsId.equals("BBS_0010") or bbsId.equals("BBS_0011")'>
+				[DAEBANG].[dbo].[bbs_counsel] a
+				</if>
+			WHERE
+				a.part = #{preBoardId} AND a.sno = PRE_NOTEID
+				)
+			WHERE BBS_ID = #{bbsId} AND REPLY_AT ='N'
+		<![CDATA[
+			AND PRE_NOTEID IS NOT NULL AND PRE_NOTEID <> '0'
+		]]>
+ 	</update>
+
+ 	<update id="updateActOldDataCnReply">
+			UPDATE BBS_T SET 
+				NTT_CN = (
+			SELECT <if test='bbsId.equals("BBS_0013")'>memo</if><if test='!bbsId.equals("BBS_0013")'>r_memo</if> FROM
+				<if test='!bbsId.equals("BBS_0007") and !bbsId.equals("BBS_0008") and !bbsId.equals("BBS_0009") and !bbsId.equals("BBS_0010") and !bbsId.equals("BBS_0011") and !bbsId.equals("BBS_0013")'>
+				[DAEBANG].[dbo].[bbs] a
+				</if>
+				<if test='bbsId.equals("BBS_0008")'>
+				[DAEBANG].[dbo].[bbs2] a
+				</if>
+				<if test='bbsId.equals("BBS_0007")'>
+				[DAEBANG].[dbo].[bbs3] a
+				</if>
+				<if test='bbsId.equals("BBS_0013")'>
+				[DAEBANG].[dbo].[bbs4] a
+				</if>
+				<if test='bbsId.equals("BBS_0009") or bbsId.equals("BBS_0010") or bbsId.equals("BBS_0011")'>
+				[DAEBANG].[dbo].[bbs_counsel] a
+				</if>
+			WHERE
+				a.part = #{preBoardId} AND a.sno = PRE_NOTEID
+				)
+			WHERE BBS_ID = #{bbsId} AND REPLY_AT ='Y'
+		<![CDATA[
+			AND PRE_NOTEID IS NOT NULL AND PRE_NOTEID <> '0'
+		]]>
+ 	</update>
+
+	<select id="selectOldMemberPass" resultType="ActMembManageVO">
+		<![CDATA[
+			SELECT M_IDX, M_ID, M_PASS FROM MEMBER_T 
+			WHERE PRE_NOTEID IS NOT NULL AND ISNULL(NEW_LOG,'') = '' AND ISNULL(M_PASS,'') <> '' AND LEN(M_PASS) < 70
+		]]>
+	</select>
+	
+    <insert id="oldMemberPassTran">
+			UPDATE MEMBER_T SET
+						M_PASS = #{mPass}
+					,	NEW_LOG = GETDATE()
+			WHERE M_IDX = #{mIdx} AND M_ID = #{mId}
+    </insert>
+    
+	<insert id="insertActMembOld">
+            INSERT INTO [DAEBANGYL].[dbo].[MEMBER_T]
+                (
+                		M_IDX
+						, M_GUBUN
+						, M_ID
+						, M_NAME
+						, M_NICK
+						, M_PASS
+						, M_BIRTH
+						, M_SEX
+						, M_HP
+						, M_TEL
+						, M_EMAIL
+						, M_ZIP
+						, M_ADDR1
+						, M_ADDR2
+						, M_STA
+						, M_WAY
+						, M_PATH
+						, M_EXAM
+						, M_HOPE1
+						, M_HOPE2
+						, M_GRADE
+						, M_SCHOOL
+						, M_ETC
+						, SMS_YN
+						, EMAIL_YN
+						, AGREE_YN
+						, AUTH_TYPE
+						, DUP_INFO
+						, SNS_SITE
+						, REGDT
+						, PRE_NOTEID
+				)
+	            SELECT
+            			(SELECT ISNULL(MAX(M_IDX),0) FROM  [DAEBANGYL].[dbo].[MEMBER_T])+ROW_NUMBER() OVER (ORDER BY sno)
+						,	(CASE B.status WHEN '일반회원' THEN '11' WHEN '합격자' THEN '13' WHEN '블랙리스트' THEN '14' WHEN '교수' THEN '21' ELSE '11' END)
+						,	(CASE B.sno WHEN 145938 THEN 'ohio_' WHEN 140396 THEN 'achwong_' ELSE B.id END)
+						,   B.name
+						,   B.nickname
+						,   ISNULL(B.pass,B.id)
+						,	left(left(replace(B.birthday,'-',''),10),8)
+						,	(CASE B.sex WHEN 'm' THEN 'M' WHEN 'w' THEN 'W' ELSE '' END)
+						,	B.hand
+						,	left(B.tel,20)
+						,	B.email
+						,	B.zip
+						,	B.add1
+						,	B.add2
+						,	(CASE B.del_ck WHEN 'y' THEN '12' ELSE '11' END)
+						,	(CASE B.mobile_join_yn WHEN 'Y' THEN '12' ELSE '11' END)
+						,	(CASE B.m_root 
+								WHEN '광고물' THEN '14' 
+								WHEN '학교 홍보물' THEN '14' 
+								WHEN '학교 홍보 전단지' THEN '14' 
+								WHEN '학원을 알게된 동기' THEN '14' 
+								WHEN '학원홍보전단지' THEN '14' 
+								WHEN '학원 홍보 전단지' THEN '14' 
+								WHEN '시험장 홍보물' THEN '13' 
+								WHEN '인터넷 검색' THEN '12' 
+								WHEN '인터넷검색' THEN '12' 
+								WHEN '주변소개' THEN '11' 
+								WHEN '주위소개' THEN '11' 
+								ELSE B.m_root END)
+						,	(CASE B.ready_exam
+								WHEN '간호직 공무원' THEN 'LE00001'
+								WHEN '간호직' THEN 'LE00001'
+								WHEN '8급 간호직' THEN 'LE00001'
+								WHEN '9급 보건직' THEN 'LE00002'
+								WHEN '보건직' THEN 'LE00002'
+								WHEN '보건직 공무원' THEN 'LE00002'
+								WHEN '보건진료직 공무원' THEN 'LE00003'
+								WHEN '보건연구사' THEN 'LE00004'
+								WHEN '9급 의료직' THEN 'LE00006'
+								WHEN '의료직' THEN 'LE00006'
+								WHEN '의료기술직 공무원' THEN 'LE00006'
+								WHEN '9급 환경직' THEN 'LE00008'
+								WHEN '환경직 공무원' THEN 'LE00008'
+								WHEN '환경직' THEN 'LE00008'
+								WHEN '환경연구사' THEN 'LE00009'
+								WHEN '식품위생직' THEN 'LE00010'
+								WHEN '9급 식품위생직' THEN 'LE00010'
+								WHEN '식품위생직 공무원' THEN 'LE00010'
+								WHEN '조리직 공무원' THEN 'LE00011'
+								WHEN '영양교사' THEN 'LE00012'
+								WHEN '보건교육사' THEN 'LE00013'
+								WHEN '보건교사' THEN 'LE00013'
+								WHEN '간호사 국가고시' THEN 'LE00015'
+								WHEN '영양사' THEN 'LE00016'
+								WHEN '위생사' THEN 'LE00017'
+								WHEN '연세대 RN-BSN' THEN 'LE00001'
+								WHEN 'RN-BSN' THEN 'LE00001'
+								WHEN '국어 영어 한국사 심화반' THEN 'LE00001'
+								WHEN '국어 영어 한국사' THEN 'LE00001'
+								WHEN '과목별 강좌' THEN 'LE00001'
+							ELSE B.ready_exam END)
+						,	B.take_area1
+						,	B.take_area2
+						,	B.academy
+						,	B.school
+						,	B.etc
+						,   (CASE B.sms WHEN 'y' THEN 'Y' WHEN 'n' THEN 'N' ELSE 'N' END)
+						,   (CASE B.mail_ck WHEN 'y' THEN 'Y' WHEN 'n' THEN 'N' ELSE 'N' END)
+						,	(CASE B.ck_act3 WHEN 'y' THEN 'Y' WHEN 'n' THEN 'N' ELSE ck_act3 END)
+						,	B.AutoType
+						,	B.DupInfo
+						,	B.AutoType
+						,	case replace(isnull(w_date,''),'0','') when '' then null else (convert(smalldatetime, 
+					                  left(case when len([w_date])=10 then w_date + ' 오전 1:00:00' else w_date end,charindex(' ',case when len([w_date])=10 then w_date + ' 오전 1:00:00' else w_date end,1)-1) 
+					                + ' ' 
+					                + right(case when len([w_date])=10 then w_date + ' 오전 1:00:00' else w_date end,charindex(' ',reverse(case when len([w_date])=10 then w_date + ' 오전 1:00:00' else w_date end),1)-1) 
+					                + case when charindex('오전',case when len([w_date])=10 then w_date + ' 오전 1:00:00' else w_date end,1) > 0 then 'AM' 
+					                                                                        else 'PM' 
+					                  end 
+					     			)) end
+						,   B.sno
+					FROM [DAEBANG].[dbo].[mb] B
+						WHERE 
+							sno NOT IN(SELECT ISNULL(PRE_NOTEID,'') FROM  [DAEBANGYL].[dbo].[MEMBER_T])
+						AND
+							id NOT IN(SELECT M_ID FROM  [DAEBANGYL].[dbo].[MEMBER_T])
+						ORDER BY sno
+    </insert>
+
+	<insert id="insertActDelMembOld">
+            INSERT INTO [DAEBANGYL].[dbo].[MEMBER_DEL]
+                (
+                			D_IDX
+						,	D_ID
+						,	D_STA
+						,	REASON
+						,	ETC
+						,	DEL_YN
+						,	DELDT
+						,	PRE_NOTEID
+				)
+	            SELECT
+            			(SELECT ISNULL(MAX(D_IDX),0) FROM  [DAEBANGYL].[dbo].[MEMBER_DEL])+ROW_NUMBER() OVER (ORDER BY sno)
+						,   B.id
+						,   B.status
+						,   B.reason
+						,   B.etc
+						,	B.del_yn
+						,	case replace(isnull(wdate,''),'0','') when '' then null else (convert(smalldatetime, 
+					                  left(case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end,charindex(' ',case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end,1)-1) 
+					                + ' ' 
+					                + right(case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end,charindex(' ',reverse(case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end),1)-1) 
+					                + case when charindex('오전',case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end,1) > 0 then 'AM' 
+					                                                                        else 'PM' 
+					                  end 
+					     			)) end
+						,   B.sno
+					FROM [DAEBANG].[dbo].[mb_del] B
+						WHERE 
+							sno NOT IN(SELECT ISNULL(PRE_NOTEID,'') FROM  [DAEBANGYL].[dbo].[MEMBER_DEL])
+						AND
+							id NOT IN(SELECT D_ID FROM  [DAEBANGYL].[dbo].[MEMBER_DEL])
+						ORDER BY sno
+    </insert>
+
+	<select id="selectActOldProfList" parameterType="ActMembManageVO" resultType="ActMembManageVO">
+			SELECT 
+					(select P_IDX from [DAEBANGYL].[dbo].[PROF_SUB] where M_ID = A.pf_id) pIdx
+					, (select M_IDX from [DAEBANGYL].[dbo].[MEMBER_T] where M_ID = A.pf_id) mIdx
+					, pf_id						mId
+					, max(pf_major)					pMajor
+					, (select fee_rate from [DAEBANG].[dbo].[mb] where sno = max(A.sno)) pRate
+					, max(ck_od)						pSeq
+					, DBO.FNDECODE(max(ck_view),'y','Y','N')					pShow
+					, max(convert(nvarchar,pf_record))				pIntro
+					, max(pf_pic)						pPic
+					, (select REGDT from [DAEBANGYL].[dbo].[MEMBER_T] where M_ID = A.pf_id) regdt
+			FROM [DAEBANG].[dbo].[mb_professor] A group by A.pf_id
+	</select>	
+	
+	<insert id="insertActBookOld">
+            INSERT INTO [DAEBANGYL].[dbo].[BOOK_MA]
+                (   BM_IDX
+				,	BM_STA
+				,	BM_SHOW
+				,	BM_SOLD
+				,	BM_SUBJECT
+				,	BM_CONTENT
+				,	BM_AUTHOR
+				,	BM_PRESS
+				,	BM_PRICE1
+				,	BM_PRICE2
+				,	BM_PIC
+				,	BM_SITE1
+				,	BM_SITE2
+				,	BM_OP1
+				,	BM_OP2
+				,	BM_OP3
+				,	BM_OP4
+				,	BM_OP5
+				,	BM_OP6
+				,	REGDT
+				)
+	            SELECT
+            			B.sno
+						,   '11'
+						,	UPPER(B.ck_view)
+						,	UPPER(B.ck_empth)
+						,   B.goods
+						,	B.cont
+						,	B.writer
+						,	B.pub
+						,	B.price1
+						,	B.price2
+						,	B.img1
+						,	UPPER(B.ck_school)
+						,	UPPER(B.ck_movie)
+						,	UPPER(B.p_int)
+						,	UPPER(B.p_new)
+						,	UPPER(B.p_best)
+						,	UPPER(B.p_ki)
+						,	UPPER(B.p_chu)
+						,	UPPER(B.p_event)
+						,	case replace(isnull(wdate,''),'0','') when '' then null else (convert(smalldatetime, 
+					                  left(case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end,charindex(' ',case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end,1)-1) 
+					                + ' ' 
+					                + right(case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end,charindex(' ',reverse(case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end),1)-1) 
+					                + case when charindex('오전',case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end,1) > 0 then 'AM' 
+					                                                                        else 'PM' 
+					                  end 
+					     			)) end
+					FROM [DAEBANG].[dbo].[bookmall] B
+						WHERE 
+							sno NOT IN(SELECT ISNULL(BM_IDX,'') FROM  [DAEBANGYL].[dbo].[BOOK_MA])
+						ORDER BY sno
+    </insert>
+
+	<insert id="insertActBookSubOld">
+            INSERT INTO [DAEBANGYL].[dbo].[BOOK_CT]
+                (CT_IDX, BM_IDX, LE_CODE, CL_CODE)
+	            SELECT
+            			B.sno
+						,   B.b_sno
+						,	(case B.p2
+when '8급 간호직' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '간호직 공무원')
+when '8급 간호직(제한경쟁)' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '간호직 공무원')
+when '8급간호직' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '간호직 공무원')
+when '9급 보건직' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '보건직 공무원')
+when '9급 식품위생직' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '식품위생직 공무원')
+when '9급 식품위생직(제한경쟁)' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '식품위생직 공무원')
+when '9급 의료기술직' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '의료기술직 공무원')
+when '9급 의료기술직(제한경쟁)' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '의료기술직 공무원')
+when '9급 환경직' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '환경직 공무원')
+when '간호직' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '간호직 공무원')
+when '간호직 [3과목]' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '간호직 공무원')
+when '간호직 [5과목]' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '간호직 공무원')
+when '보건교사' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '보건교사')
+when '보건연구사' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '보건연구사')
+when '보건직' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '보건직 공무원')
+when '보건진료직' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '보건진료직 공무원')
+when '서브노트' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '간호직 공무원')
+when '식품위생직' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '식품위생직 공무원')
+when '식품위생직(경력)' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '식품위생직 공무원')
+when '식품위생직(제한)' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '식품위생직 공무원')
+when '심화학습(공통과목)' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '간호직 공무원')
+when '영양교사' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '영양교사')
+when '영양사' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '영양사')
+when '위생사' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '위생사')
+when '의료기술직' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '의료기술직 공무원')
+when '환경직' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'LE%' and code_nm like '환경직 공무원')
+						end)
+						,	(case B.p3
+when '700' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '생물')
+when '8급 간호직(국어,영어,한국사,간호관리,지역사회간호)' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '간호관리')
+when '8급 간호직(생물,간호관리,지역사회간호)' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '간호관리')
+when '8급간호직(국어,영어,한국사,간호관리,지역사회간호)' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '간호관리')
+when '9급 보건직(국어,영어,한국사,보건행정,공중보건)' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '공중보건')
+when '9급 보건직문제(국어,한국사,영어)' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '공중보건')
+when '9급 식품위생직(국어,영어,한국사,식품위생,식품화학)' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '식품위생')
+when '9급 식품위생직(화학,식품위생,식품미생물)' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '식품위생')
+when '9급 의료기술직(국어,영어,한국사,공중보건,해부생리학)' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '공중보건')
+when '9급 의료기술직(생물,공중보건,의료관계법규)' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '공중보건')
+when '9급 환경직(국어,영어,한국사,화학,환경공학)' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '환경공학')
+when '간호관리' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '간호관리')
+when '공중보건' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '공중보건')
+when '교육학' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '영양교사')
+when '국사' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '한국사')
+when '국어' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '국어')
+when '김희영' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '공중보건')
+when '노성신' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '공중보건')
+when '단체급식/식품위생관계법규' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '식품위생')
+when '보건행정' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '보건행정')
+when '생리학/생화학' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '화학')
+when '생물' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '생물')
+when '생물기초' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '생물')
+when '생물심화' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '생물')
+when '생물이론' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '생물')
+when '식사요법/식품위생학' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '식품위생')
+when '식품미생물' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '식품위생')
+when '식품위생' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '식품위생')
+when '식품학/조리원리' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '식품화학')
+when '식품화학' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '식품화학')
+when '영양사 시험문제집1' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '영양사')
+when '영양사 시험문제집2' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '영양사')
+when '영양학/영양교육' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '영양사')
+when '영어' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '영어')
+when '영어보강' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '영어')
+when '오정화' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '공중보건')
+when '위생사 실기' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '위생사')
+when '위생사 필기' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '위생사')
+when '위생사문제집' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '위생사')
+when '위생사실기' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '위생사')
+when '위생사필기' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '위생사')
+when '지역사회간호' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '지역사회간호')
+when '캠벨' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '생물')
+when '하국사' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '한국사')
+when '한국사' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '한국사')
+when '해부생리학' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '해부생리학')
+when '행정법' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '행정법')
+when '화학' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '화학')
+when '환경공학' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '환경공학')
+when '환경보건' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '환경보건')
+when '환경화학' then (select top 1 code_id from [DAEBANGYL].[dbo].[LEC_CODE] where del_dt is null and code_Id like 'CL%' and code_nm like '환경화학')
+						end)
+				FROM [DAEBANG].[dbo].[book_join] B
+					WHERE 
+						sno NOT IN(SELECT ISNULL(CT_IDX,'') FROM  [DAEBANGYL].[dbo].[BOOK_CT])
+						and b_sno in(select sno from [DAEBANG].[dbo].[bookmall])
+					ORDER BY sno
+    </insert>
+
+	<insert id="insertActLectureOld">
+            INSERT INTO [DAEBANGYL].[dbo].[LECTURE_T]
+                (	MV_IDX
+				,	CL_CODE
+				,	MV_SUBJECT
+				,	MV_PROF
+				,	MV_OP1
+				,	MV_OP2
+				,	MV_OP3
+				,	MV_STA
+				,	MV_OPEN
+				,	MV_PERIOD
+				,	MV_QNA
+				,	MV_MNG
+				,	MV_PCMO
+				,	MV_CLOSE
+				,	MV_PRICE1
+				,	MV_PRICE2
+				,	MV_PRICE3
+				,	MV_CHARGE
+				,	MV_BOOK
+				,	MV_DESC
+				,	MV_MSGYN1
+				,	MV_MSG1
+				,	MV_MSGYN2
+				,	MV_MSG2
+				,	MV_ETC
+				,	REGDT
+				,	MODDT
+				)
+	            SELECT
+            			B.sno
+						,	ISNULL((select top 1 
+								(case 
+							when p3 = '400' then 'CL00011'
+							when p3 = 'OT' then 'CL00001'
+							when p3 = '간문1' then 'CL00002'
+							when p3 = '간문2' then 'CL00002'
+							when p3 = '간문3' then 'CL00002'
+							when p3 = '간호1' then 'CL00002'
+							when p3 = '간호2' then 'CL00002'
+							when p3 = '간호3' then 'CL00002'
+							when p3 = '간호관리' then 'CL00002'
+							when p3 = '간호관리 (택1)' then 'CL00002'
+							when p3 = '간호학' then 'CL00001'
+							when p3 = '감법' then 'CL00004'
+							when p3 = '공문1' then 'CL00005'
+							when p3 = '공문2' then 'CL00005'
+							when p3 = '공문3' then 'CL00005'
+							when p3 = '공보' then 'CL00005'
+							when p3 = '공보(택1)' then 'CL00005'
+							when p3 = '공보1' then 'CL00005'
+							when p3 = '공보2' then 'CL00005'
+							when p3 = '공보3' then 'CL00005'
+							when p3 = '공보심화' then 'CL00005'
+							when p3 = '공중' then 'CL00005'
+							when p3 = '공중보건' then 'CL00005'
+							when p3 = '공중보건 (택1)' then 'CL00005'
+							when p3 = '공중보건(택1)' then 'CL00005'
+							when p3 = '공중보건1' then 'CL00005'
+							when p3 = '공중보건2' then 'CL00005'
+							when p3 = '관리' then 'CL00002'
+							when p3 = '관리1' then 'CL00003'
+							when p3 = '관문1' then 'CL00002'
+							when p3 = '관문2' then 'CL00002'
+							when p3 = '관문3' then 'CL00002'
+							when p3 = '국문1' then 'CL00006'
+							when p3 = '국문2' then 'CL00006'
+							when p3 = '국문3' then 'CL00006'
+							when p3 = '국어' then 'CL00006'
+							when p3 = '국어 (택1)' then 'CL00006'
+							when p3 = '국어(택1)' then 'CL00006'
+							when p3 = '국어1' then 'CL00006'
+							when p3 = '국어2' then 'CL00006'
+							when p3 = '국어3' then 'CL00006'
+							when p3 = '근현대사' then 'CL00024'
+							when p3 = '기본' then 'CL00003'
+							when p3 = '기본1' then 'CL00003'
+							when p3 = '기초간호' then 'CL00001'
+							when p3 = '김' then 'CL00016'
+							when p3 = '김지연' then 'CL00020'
+							when p3 = '김희영' then 'CL00020'
+							when p3 = '단체급식' then 'CL00017'
+							when p3 = '모성' then 'CL00003'
+							when p3 = '모성1' then 'CL00003'
+							when p3 = '모의1' then 'CL00017'
+							when p3 = '모의2' then 'CL00017'
+							when p3 = '모의3' then 'CL00017'
+							when p3 = '모의4' then 'CL00017'
+							when p3 = '모의5' then 'CL00017'
+							when p3 = '모의6' then 'CL00017'
+							when p3 = '모의7' then 'CL00017'
+							when p3 = '모의8' then 'CL00017'
+							when p3 = '미생물' then 'CL00012'
+							when p3 = '법규' then 'CL00007'
+							when p3 = '법규1' then 'CL00003'
+							when p3 = '보건학' then 'CL00008'
+							when p3 = '보건학1' then 'CL00008'
+							when p3 = '보건행정' then 'CL00009'
+							when p3 = '보건행정 (택1)' then 'CL00009'
+							when p3 = '보문1' then 'CL00009'
+							when p3 = '보문2' then 'CL00009'
+							when p3 = '보문3' then 'CL00009'
+							when p3 = '보법' then 'CL00007'
+							when p3 = '보행' then 'CL00009'
+							when p3 = '보행1' then 'CL00009'
+							when p3 = '보행2' then 'CL00009'
+							when p3 = '보행3' then 'CL00009'
+							when p3 = '빈문1' then 'CL00018'
+							when p3 = '빈문2' then 'CL00018'
+							when p3 = '빈문3' then 'CL00018'
+							when p3 = '사문1' then 'CL00024'
+							when p3 = '사문2' then 'CL00024'
+							when p3 = '사문3' then 'CL00024'
+							when p3 = '사회' then 'CL00010'
+							when p3 = '생기' then 'CL00011'
+							when p3 = '생리학,생화학' then 'CL00017'
+							when p3 = '생문1' then 'CL00011'
+							when p3 = '생문2' then 'CL00011'
+							when p3 = '생문3' then 'CL00011'
+							when p3 = '생물' then 'CL00011'
+							when p3 = '생물 (택1)' then 'CL00011'
+							when p3 = '생물(택1)' then 'CL00011'
+							when p3 = '생물1' then 'CL00011'
+							when p3 = '생물2' then 'CL00011'
+							when p3 = '생물3' then 'CL00011'
+							when p3 = '생심' then 'CL00011'
+							when p3 = '생심1' then 'CL00011'
+							when p3 = '생이' then 'CL00011'
+							when p3 = '성인' then 'CL00003'
+							when p3 = '성인1' then 'CL00003'
+							when p3 = '식문1' then 'CL00013'
+							when p3 = '식문2' then 'CL00013'
+							when p3 = '식미' then 'CL00012'
+							when p3 = '식사요법' then 'CL00017'
+							when p3 = '식위' then 'CL00013'
+							when p3 = '식위문1' then 'CL00013'
+							when p3 = '식위문2' then 'CL00013'
+							when p3 = '식품미생물' then 'CL00012'
+							when p3 = '식품위생' then 'CL00013'
+							when p3 = '식품위생(택1)' then 'CL00013'
+							when p3 = '식품위생1' then 'CL00013'
+							when p3 = '식품위생2' then 'CL00013'
+							when p3 = '식품위생학' then 'CL00017'
+							when p3 = '식품학' then 'CL00017'
+							when p3 = '식품화학' then 'CL00014'
+							when p3 = '식품화학1' then 'CL00014'
+							when p3 = '식품화학2' then 'CL00014'
+							when p3 = '식품화학개론' then 'CL00014'
+							when p3 = '식화(택1)' then 'CL00014'
+							when p3 = '식화문1' then 'CL00014'
+							when p3 = '식화문2' then 'CL00014'
+							when p3 = '식화문3' then 'CL00014'
+							when p3 = '아동' then 'CL00003'
+							when p3 = '아동1' then 'CL00003'
+							when p3 = '역학' then 'CL00015'
+							when p3 = '영문1' then 'CL00018'
+							when p3 = '영문2' then 'CL00018'
+							when p3 = '영문3' then 'CL00018'
+							when p3 = '영양1' then 'CL00016'
+							when p3 = '영양2' then 'CL00016'
+							when p3 = '영양교육,위생법규' then 'CL00017'
+							when p3 = '영양학' then 'CL00017'
+							when p3 = '영양학1' then 'CL00016'
+							when p3 = '영양학2' then 'CL00016'
+							when p3 = '영양학3' then 'CL00016'
+							when p3 = '영어' then 'CL00018'
+							when p3 = '영어 (택1)' then 'CL00018'
+							when p3 = '영어(택1)' then 'CL00018'
+							when p3 = '영어1' then 'CL00018'
+							when p3 = '영어2' then 'CL00018'
+							when p3 = '영어3' then 'CL00018'
+							when p3 = '영어임1' then 'CL00018'
+							when p3 = '영어임2' then 'CL00018'
+							when p3 = '영어임3' then 'CL00018'
+							when p3 = '오쌤' then 'CL00018'
+							when p3 = '위생관계법규' then 'CL00019'
+							when p3 = '위생법규' then 'CL00019'
+							when p3 = '의료관계법규' then 'CL00021'
+							when p3 = '이' then 'CL00016'
+							when p3 = '이승훈' then 'CL00020'
+							when p3 = '임쌤' then 'CL00018'
+							when p3 = '정신' then 'CL00003'
+							when p3 = '정신1' then 'CL00003'
+							when p3 = '조리원리' then 'CL00017'
+							when p3 = '지문1' then 'CL00023'
+							when p3 = '지문2' then 'CL00023'
+							when p3 = '지문3' then 'CL00023'
+							when p3 = '지역' then 'CL00023'
+							when p3 = '지역1' then 'CL00023'
+							when p3 = '지역2' then 'CL00023'
+							when p3 = '지역3' then 'CL00023'
+							when p3 = '지역사회' then 'CL00022'
+							when p3 = '지역사회간호' then 'CL00023'
+							when p3 = '지역사회간호 (택1)' then 'CL00023'
+							when p3 = '지역사회간호(택1)' then 'CL00023'
+							when p3 = '최' then 'CL00016'
+							when p3 = '캠벨' then 'CL00011'
+							when p3 = '파트1' then 'CL00028'
+							when p3 = '파트2' then 'CL00028'
+							when p3 = '파트3' then 'CL00028'
+							when p3 = '평환1' then 'CL00028'
+							when p3 = '평환2' then 'CL00028'
+							when p3 = '평환3' then 'CL00028'
+							when p3 = '한국사' then 'CL00024'
+							when p3 = '한국사 (택1)' then 'CL00024'
+							when p3 = '한국사(택1)' then 'CL00024'
+							when p3 = '한국사1' then 'CL00024'
+							when p3 = '한국사2' then 'CL00024'
+							when p3 = '한국사3' then 'CL00024'
+							when p3 = '한문1' then 'CL00024'
+							when p3 = '한문2' then 'CL00024'
+							when p3 = '해부생리학' then 'CL00025'
+							when p3 = '행정법' then 'CL00026'
+							when p3 = '행정법총론' then 'CL00026'
+							when p3 = '화기' then 'CL00027'
+							when p3 = '화문1' then 'CL00027'
+							when p3 = '화문2' then 'CL00027'
+							when p3 = '화문3' then 'CL00027'
+							when p3 = '화학' then 'CL00027'
+							when p3 = '화학(택1)' then 'CL00027'
+							when p3 = '화학1' then 'CL00027'
+							when p3 = '화학2' then 'CL00027'
+							when p3 = '화학3' then 'CL00027'
+							when p3 = '환경공학' then 'CL00028'
+							when p3 = '환경공학(택1)' then 'CL00028'
+							when p3 = '환경공학1' then 'CL00028'
+							when p3 = '환경공학2' then 'CL00028'
+							when p3 = '환경공학3' then 'CL00028'
+							when p3 = '환경보건' then 'CL00029'
+							when p3 = '환경화학' then 'CL00030'
+							when p3 = '환공(택1)' then 'CL00028'
+							when p3 = '환공1' then 'CL00028'
+							when p3 = '환공2' then 'CL00028'
+							when p3 = '환공3' then 'CL00028'
+							when p3 = '환문1' then 'CL00028'
+							when p3 = '환문2' then 'CL00028'
+							when p3 = '환문3' then 'CL00028'
+							when p3 = '환보' then 'CL00029'
+							when p3 = '환보문' then 'CL00029'
+								else 'CL00050' end)
+							from [DAEBANG].[dbo].[lecture_join] where l_sno = B.sno order by sno desc),'CL00039')
+						,	B.goods
+						,   B.t_id
+						,	(case B.jongdan when 'j' then 'Y' else NULL end)
+						,	UPPER(B.p_int)
+						,	UPPER(B.p_new)
+						,	UPPER(B.ck_view)
+						,	(case B.status when 'r' then '3' when 'u' then '2' when 'y' then '1' end)
+						,	B.gigan
+						,	UPPER(B.ck_question)
+						,   B.t_id2
+						,	(case B.mobile_yn when 'y' then '3' else '1' end)
+						,	UPPER(B.ck_end)
+						,	B.price3
+						,	B.m_price
+						,	B.all_price
+						,	B.ex_price
+						,	UPPER(B.ck_bookfree)
+						,	B.cont
+						,	UPPER(B.ck_alert)
+						,	B.ck_alert2
+						,	UPPER(B.ck_notice)
+						,	B.ck_notice2
+						,	B.memo
+						,	case replace(isnull(wdate,''),'0','') when '' then null else (convert(smalldatetime, 
+					                  left(case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end,charindex(' ',case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end,1)-1) 
+					                + ' ' 
+					                + right(case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end,charindex(' ',reverse(case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end),1)-1) 
+					                + case when charindex('오전',case when len([wdate])=10 then wdate + ' 오전 1:00:00' else wdate end,1) > 0 then 'AM' 
+					                                                                        else 'PM' 
+					                  end 
+					     			)) end
+						,	case replace(isnull(udate,''),'0','') when '' then null else (convert(smalldatetime, 
+					                  left(case when len([udate])=10 then udate + ' 오전 1:00:00' else udate end,charindex(' ',case when len([udate])=10 then udate + ' 오전 1:00:00' else udate end,1)-1) 
+					                + ' ' 
+					                + right(case when len([udate])=10 then udate + ' 오전 1:00:00' else udate end,charindex(' ',reverse(case when len([udate])=10 then udate + ' 오전 1:00:00' else udate end),1)-1) 
+					                + case when charindex('오전',case when len([udate])=10 then udate + ' 오전 1:00:00' else udate end,1) > 0 then 'AM' 
+					                                                                        else 'PM' 
+					                  end 
+					     			)) end
+					FROM [DAEBANG].[dbo].[lecture] B
+						WHERE 
+							sno NOT IN(SELECT ISNULL(MV_IDX,'') FROM  [DAEBANGYL].[dbo].[LECTURE_T])
+						ORDER BY sno
+    </insert>
+    <!-- 
+							AND sno IN(SELECT l_sno FROM [DAEBANG].[dbo].[lecture_join] a, [DAEBANG].[dbo].[p3] b where a.p1=b.p1 and a.p2=b.p2 and a.p3=b.p3)
+ 	-->
+	
+	<insert id="insertActLectureBookOld">
+            INSERT INTO [DAEBANGYL].[dbo].[LECTURE_BOOK]
+                (BK_IDX, MV_IDX, BM_IDX)
+	            SELECT
+            			B.sno
+						,	B.l_sno
+						,   B.b_sno
+				FROM [DAEBANG].[dbo].[lecture_book] B
+					WHERE 
+						sno NOT IN(SELECT ISNULL(BK_IDX,'') FROM  [DAEBANGYL].[dbo].[LECTURE_BOOK])
+					ORDER BY sno
+    </insert>
+
+	<insert id="insertActLectureClipOld">
+            INSERT INTO [DAEBANGYL].[dbo].[LECTURE_CLIP]
+                (CP_IDX ,MV_IDX ,CP_SEQ ,CP_SMP ,CP_TITLE ,CP_URL ,CP_UTB ,CP_TIME)
+	            SELECT
+            			B.sno
+						,	B.l_sno
+						,   B.od
+						,   (case when CHARINDEX('샘플', B.title) > 0 then 'Y' else null end)
+						,   B.title
+						,   B.url2
+						,   B.youtube
+						,   B.t_time
+				FROM [DAEBANG].[dbo].[lecture_movie] B
+					WHERE 
+						sno NOT IN(SELECT ISNULL(CP_IDX,'') FROM  [DAEBANGYL].[dbo].[LECTURE_CLIP])
+					ORDER BY sno
+    </insert>
+
+	<insert id="insertActDownCntOld">
+            INSERT INTO [DAEBANGYL].[dbo].[DOWN_CNT]
+                (D_IDX,BBS_ID,B_IDX,M_ID,D_CNT,sno)
+	            SELECT
+            			(SELECT ISNULL(MAX(D_IDX),0) FROM  [DAEBANGYL].[dbo].[DOWN_CNT])+ROW_NUMBER() OVER (ORDER BY sno)
+            			,	'BBS_0007'
+						,	(SELECT NTT_ID FROM  [DAEBANGYL].[dbo].[BBS_T] WHERE BBS_ID = 'BBS_0007' AND PRE_NOTEID = B.p_sno)
+						,   B.id
+						,   B.cnt
+						,	B.sno
+				FROM [DAEBANG].[dbo].[bbs3_down] B
+					WHERE 
+						sno NOT IN(SELECT ISNULL(sno,'') FROM  [DAEBANGYL].[dbo].[DOWN_CNT])
+					ORDER BY sno
+    </insert>
+
+	<!-- 	/* 서점문의 교재 일련번호 업데이트  */ -->
+	<!-- 	/* 1:1문의 카테고리(분류)  */ -->
+	<update id="updateBBS_0010_bookNo_direct_excute">
+			UPDATE BBS_T SET 
+				THUM_FILE_ID = (
+			SELECT b_sno FROM
+				[DAEBANG].[dbo].[bbs_counsel] a
+			WHERE
+				a.part = 'my_qna2' AND a.sno = PRE_NOTEID
+				)
+			WHERE BBS_ID = 'BBS_0010'
+			AND PRE_NOTEID IS NOT NULL
+
+			UPDATE BBS_T SET 
+							NTT_CAT = (
+						SELECT tmp FROM
+							[DAEBANG].[dbo].[bbs_counsel] a
+						WHERE
+							a.part = 'my_counsel' AND a.sno = PRE_NOTEID
+							)
+						WHERE BBS_ID = 'BBS_0011'
+						AND PRE_NOTEID IS NOT NULL
+			
+			UPDATE BBS_T SET 
+							NTT_CAT = (
+						SELECT code FROM
+							[CODE_DT] a
+						WHERE
+							a.code_id = 'COM054' and a.CODE_NM = NTT_CAT
+							)
+						WHERE BBS_ID = 'BBS_0011'
+			AND PRE_NOTEID IS NOT NULL
+
+
+update bbs_filedetail set [FILE_STRE_COURS] = B.cn
+from bbs_filedetail A,
+(select b.ATCH_FILE_ID,
+  ('/yulimgosi2017/upload/board/'+(select bbs_cn from bbs_master where bbs_id=b.bbs_id)) cn
+  from bbs_filedetail a, bbs_t b where a.ATCH_FILE_ID=b.ATCH_FILE_ID and PRE_NOTEID IS NOT NULL) B
+  where A.ATCH_FILE_ID=B.ATCH_FILE_ID
+    </update>
+
+</mapper>

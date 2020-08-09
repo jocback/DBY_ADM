@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ActEmpManage">
+
+	<select id="selectActEmpList" parameterType="ActManageSearchVO" resultType="egovMap">
+		<![CDATA[
+			SELECT  *
+			FROM
+			(SELECT  ROW_NUMBER() OVER(ORDER BY ACT.GROUP_ID ASC, ACT.USER_NM ASC) RNUM,ACT.*
+						FROM
+				(SELECT
+							A.EMPLYR_ID EMP_ID
+						,	A.USER_NM EMP_NM
+						,	A.USER_NM
+						,	A.GROUP_ID
+						,	(SELECT E.GROUP_NM FROM INFO_AUTHOGROUP E WHERE E.GROUP_ID=A.GROUP_ID) GROUP_NM
+						,	CONVERT(VARCHAR(10),A.SBSCRB_DE, 120) REGDT
+						,	A.EMPLYR_STTUS_CODE STATUS_CODE
+						,	A.ORG_CD
+						,	A.PSN_CD
+						,	(SELECT(SELECT A_NAME FROM ORG_TEAMS WHERE A_ID = B.A_FORE) FROM ORG_TEAMS B WHERE A_ID = A.ORG_CD) ORG_CD_NM1
+						,	(SELECT A_NAME FROM ORG_TEAMS WHERE A_ID = A.ORG_CD) ORG_CD_NM2
+						,	DBO.GETCODENAME('COM045',A.PSN_CD) PSN_CD_NM
+						,	A.TEL_NO
+						,	A.EMAIL
+						,	A.USEYN
+			FROM	  INFO_EMPLYR A
+			WHERE   1=1 AND ISNULL(EMPLYR_STTUS_CODE,'P') = 'P'
+		]]>					
+			<if test="searchKeyword != null and !searchKeyword.equals('')">
+				<if test='searchCnd.equals("all")'>
+				<![CDATA[ AND (A.EMPLYR_ID LIKE '%' + #{searchKeyword} + '%' OR A.USER_NM LIKE '%' + #{searchKeyword} + '%') ]]>
+				</if>
+				<if test='searchCnd.equals("actempId")'>
+				<![CDATA[ AND A.EMPLYR_ID LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("actEmpnm")'>
+				<![CDATA[ AND A.USER_NM LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+			</if>
+			<![CDATA[	) ACT) AAA	WHERE RNUM  BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}		]]>			
+	</select>
+	
+	<select id="selectActEmpListTotCnt" parameterType="ActManageSearchVO" resultType="int">
+		<![CDATA[
+			SELECT 	COUNT(*) totcnt
+			FROM	  INFO_EMPLYR A
+			WHERE   1=1 AND ISNULL(EMPLYR_STTUS_CODE,'P') = 'P'
+		]]>
+			<if test="searchKeyword != null and !searchKeyword.equals('')">
+				<if test='searchCnd.equals("all")'>
+				<![CDATA[ AND (A.EMPLYR_ID LIKE '%' + #{searchKeyword} + '%' OR A.USER_NM LIKE '%' + #{searchKeyword} + '%') ]]>
+				</if>
+				<if test='searchCnd.equals("actempId")'>
+				<![CDATA[ AND A.EMPLYR_ID LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("actEmpnm")'>
+				<![CDATA[ AND A.USER_NM LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+			</if>
+	</select>
+	
+	<select id="selectActEmpDetail" resultType="egovMap">
+		<![CDATA[		
+				SELECT
+							A.EMPLYR_ID EMP_ID
+						,	A.USER_NM EMP_NM
+						,	A.GROUP_ID
+						,	(SELECT E.GROUP_NM FROM INFO_AUTHOGROUP E WHERE E.GROUP_ID=A.GROUP_ID) GROUP_NM
+						,	CONVERT(VARCHAR(10),A.SBSCRB_DE, 120) REGDT
+						,	A.EMPLYR_STTUS_CODE STATUS_CODE
+						,	ISNULL(A.ORG_CD,'') ORG_CD
+						,	(SELECT A_FORE FROM ORG_TEAMS WHERE A_ID = A.ORG_CD) ORG_CD_D2
+						,	(SELECT A_NAME FROM ORG_TEAMS WHERE A_ID = A.ORG_CD) ORG_CD_NM3
+						,	A.PSN_CD
+						,	A.TEL_NO
+						,	A.EMAIL
+						,	A.USEYN
+				FROM	  INFO_EMPLYR A
+			WHERE   A.EMPLYR_ID = #{empId}
+		]]>
+	</select>
+	
+	<select id="selectActEmpInfoOne" parameterType="ActEmpManageVO" resultType="String">
+		<![CDATA[
+				SELECT 	ISNULL(${empField},'') LV
+				FROM	  INFO_EMPLYR A
+				WHERE   1=1 AND ISNULL(EMPLYR_STTUS_CODE,'P') = 'P'
+		]]>
+			<if test="empId != null and !empId.equals('')">
+			<![CDATA[ AND A.EMPLYR_ID = #{empId}	]]>
+			</if>
+	</select>
+	
+	<update id="updateActEmp">
+			UPDATE INFO_EMPLYR SET
+					GROUP_ID	=	#{groupId}
+				,	USER_NM		=	#{empNm}
+				,	ORG_CD		=	#{orgCd}
+				,	PSN_CD		=	#{psnCd}
+				,	TEL_NO			=	#{telNo}
+				,	EMAIL			=	#{email}
+				,	USEYN			=	#{useyn}
+				,	MODEMP		=	#{modemp}
+				,	MODDT			=	GETDATE()
+			<if test="password != null and !password.equals('')">
+				,	PASSWORD	= #{password}
+			</if>
+			WHERE EMPLYR_ID = #{empId}
+	</update>
+	
+	<update id="updateActEmpOtpRegcd">
+			UPDATE INFO_EMPLYR SET
+					OTP_REGCD	=	#{otpRegcd}
+				,	MODEMP			=	#{modemp}
+				,	MODDT				=	GETDATE()
+			WHERE EMPLYR_ID = #{empId}
+	</update>
+	
+    <insert id="insertActEmp">
+        <![CDATA[
+		BEGIN TRAN
+            INSERT INTO INFO_EMPLYR 
+                (   EMPLYR_ID
+				,	USER_NM
+				,	PASSWORD
+				,	GROUP_ID
+				,	EMPLYR_STTUS_CODE
+				,	SBSCRB_DE
+				,	ORG_CD
+				,	PSN_CD
+				,	TEL_NO
+				,	EMAIL
+				,	USEYN
+				,	EMP_NO
+				,	REGEMP
+				,	MODEMP
+				,	MODDT
+				)
+            VALUES (
+                    #{empId}
+				,	#{empNm}
+				,	#{password}
+				,	#{groupId}
+				,	'P'
+				,	GETDATE()
+				,	#{orgCd}
+				,	#{psnCd}
+				,	#{telNo}
+				,	#{email}
+				,	#{useyn}
+				,	#{empNo}
+				,	#{regemp}
+				,	#{regemp}
+				,	GETDATE()
+				);
+			COMMIT TRAN;
+        ]]>
+    </insert>
+    
+	<select id="selectEmpCnt" parameterType="ActEmpManageVO" resultType="int">
+		<![CDATA[
+			SELECT 	COUNT(*) totcnt
+			FROM	  INFO_EMPLYR
+			WHERE EMPLYR_ID = #{empId}
+		]]>
+	</select>
+	
+	<select id="selectEmpAuthCnt" parameterType="ActEmpManageVO" resultType="int">
+		<![CDATA[
+			SELECT 	COUNT(*) totcnt
+			FROM	  EMPLYR_SCRTYESTBS
+			WHERE SCRTY_DTRMN_TRGET_ID = #{empId}
+		]]>
+	</select>
+	
+    <insert id="insertEmpAuth">
+        <![CDATA[
+		BEGIN TRAN
+            INSERT INTO EMPLYR_SCRTYESTBS 
+                (   SCRTY_DTRMN_TRGET_ID
+				,	MBER_TY_CODE
+				,	AUTHOR_CODE
+				)
+            VALUES (
+                    #{empId}
+				,	'USR03'
+				,	'ROLE_ADMIN'
+				);
+			COMMIT TRAN;
+        ]]>
+    </insert>
+    
+    <insert id="deleteActEmp">
+        <![CDATA[
+		BEGIN TRAN
+			DELETE EMPLYR_SCRTYESTBS 
+			WHERE SCRTY_DTRMN_TRGET_ID = #{empId};
+
+			DELETE INFO_EMPLYR 
+			WHERE EMPLYR_ID = #{empId};
+			COMMIT TRAN;
+        ]]>
+    </insert>
+    
+	<select id="selectActGroupList" resultType="egovMap">
+		<![CDATA[
+			SELECT  A.GROUP_ID
+						,	A.GROUP_NM
+						,	A.GROUP_LEVEL
+			FROM	  INFO_AUTHOGROUP A
+			WHERE   1=1 AND A.DELDT IS NULL ORDER BY GROUP_LEVEL DESC, GROUP_NM ASC
+		]]>					
+	</select>
+	
+    <select id="searchInfoEmp" parameterType="ActManageSearchVO" resultType="egovMap">
+		SELECT
+				EMP_NO
+			,	EMP_NM
+			,	ORG_CD
+			,	(SELECT A_FORE FROM ORG_TEAMS WHERE A_ID = A.ORG_CD) FORE_CD
+			,	PSN_CD
+			,	(SELECT(SELECT A_NAME FROM ORG_TEAMS WHERE A_ID = B.A_FORE) FROM ORG_TEAMS B WHERE A_ID = A.ORG_CD) ORG_CD_NM1
+			,	(SELECT A_NAME FROM ORG_TEAMS WHERE A_ID = A.ORG_CD) ORG_CD_NM2
+			,	DBO.GETCODENAME('COM045',PSN_CD) PSN_CD_NM
+			,	TEL_NO
+			,	HP_NO
+			,	EMAIL
+			,	POS_NO
+			,	USEYN
+		FROM INFO_EMP A
+			WHERE A.DELDT IS NULL
+		<if test="searchCnd == 0">
+			AND A.EMP_NO = #{searchKeyword}
+		</if>
+		<if test="searchCnd == 1">
+			AND A.EMP_NM = #{searchKeyword}
+		</if>
+		ORDER BY A.EMP_NM
+    </select>
+    
+</mapper>

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ActOrderExtManage">
+
+	<select id="selectActOrderExtList" resultType="egovMap">
+			<if test='actListMode.equals("PAGE") or actListMode.equals("EXCEL")'>
+			SELECT AAA.*
+				<![CDATA[ 
+				,ISNULL( (SELECT SUM(gigan_day) FROM DAEBANG.dbo.lecture_order_ext WHERE osno = AAA.osno AND sno < AAA.sno AND status IN('수강중','수강종료')), 0) gigan_sum
+				]]>
+			FROM
+			(SELECT  ROW_NUMBER() OVER(ORDER BY ACT.o_date DESC, ACT.sno DESC) RNUM, ACT.*
+				FROM
+				(SELECT A.*,B.goods,B.sin_date,B.status2,B.gigan_day gigan,B.mobile_yn FROM DAEBANG.dbo.lecture_order_ext A LEFT OUTER JOIN DAEBANG.dbo.lecture_order2 B ON A.osno = B.sno WHERE 1=1
+				</if> 
+				<if test='actListMode.equals("COUNT")'>
+				SELECT COUNT(*) CNT, SUM(pay_price) SUM_PRICE FROM DAEBANG.dbo.lecture_order_ext A LEFT OUTER JOIN DAEBANG.dbo.lecture_order2 B ON A.osno = B.sno WHERE 1=1
+				</if>
+					<if test="jumun != null and !jumun.equals('')">
+					AND (A.jumun='D'+#{jumun})
+					</if>
+					<if test="searchArr1 != null and !searchArr1.equals('')">
+					AND A.status in
+					(<foreach item="item" index="index" collection="searchArr1" open="" close="" separator=",">
+						#{item}
+					</foreach>)
+					</if>
+				<if test="searchArr2 != null and !searchArr2.equals('')">
+				AND 
+				<foreach item="item" index="index" collection="searchArr2" open="(" close=")" separator="OR">
+					A.method LIKE '%' + #{item} + '%' 
+				</foreach>
+				</if>
+					<if test="sno != null and !sno.equals('')">
+					AND A.sno=#{sno}
+					</if>
+					<if test="uid != null and !uid.equals('')">
+					AND A.uid=#{uid}
+					</if>
+					<if test='!searchSdt.equals("")'>
+						<![CDATA[ AND A.o_date >= #{searchSdt} ]]>
+					</if>
+					<if test='!searchEdt.equals("")'>
+						<![CDATA[ AND A.o_date <= #{searchEdt} ]]>
+					</if>
+			<if test="searchKeyword != null and !searchKeyword.equals('')">
+				<if test='searchCnd.equals("1")'>
+				<![CDATA[ AND A.o_name LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("2")'>
+				<![CDATA[ AND A.jumin LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("3")'>
+				<![CDATA[ AND A.b_name LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("4")'>
+				<![CDATA[ AND A.uid = #{searchKeyword}	]]>
+				</if>
+				<if test='searchCnd.equals("5")'>
+				<![CDATA[ AND B.goods LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("6")'>
+				<![CDATA[ AND A.memo LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+			</if>
+				<if test='actListMode.equals("PAGE")'>
+				) ACT) AAA	WHERE RNUM  BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
+				</if>			
+			<if test='actListMode.equals("EXCEL")'>
+			) ACT) AAA
+			</if>			
+	</select>
+   
+	<select id="selectActOrderExtTotCnt" resultType="egovMap">
+		SELECT COUNT(*) TOT_CNT
+		FROM DAEBANG.dbo.lecture_order_ext
+	</select>
+   
+	<select id="selectActOrderExtDtList" resultType="egovMap">
+		SELECT A.*,B.goods,B.sin_date,B.status2,B.gigan_day gigan,B.mobile_yn
+		FROM DAEBANG.dbo.lecture_order_ext A LEFT OUTER JOIN DAEBANG.dbo.lecture_order2 B ON A.osno = B.sno
+		WHERE osno = #{sno} AND status IN ('수강중','수강종료') order by A.o_date DESC
+	</select>
+   
+	<select id="selectActOrderExtDetail" resultType="egovMap">
+		SELECT A.*,B.goods,B.sin_date,B.status2,B.gigan_day gigan,B.mobile_yn
+		FROM DAEBANG.dbo.lecture_order_ext A INNER JOIN DAEBANG.dbo.lecture_order2 B ON A.osno = B.sno
+		WHERE A.sno = #{sno}
+	</select>
+	
+	<update id="updateActOrderExt">
+		BEGIN TRAN
+			UPDATE DAEBANG.dbo.lecture_order_ext SET
+					status			= #{status}
+				,	gigan_day		= #{giganDay}
+				<if test='payPrice != null and !payPrice.equals("")'>
+				,	pay_price		= #{payPrice}
+				</if>
+				,	method			= #{method2}
+				,	b_name		= #{bName}
+				,	memo			= #{memo}
+				<if test='status.equals("수강중") or status.equals("일시정지")'>
+				,	payday			= (CASE WHEN ISNULL(payday,'')='' THEN convert(varchar(10), GETDATE(),120) ELSE payday END)
+				</if>
+			WHERE osno = #{psno} AND sno = #{sno};
+		COMMIT TRAN
+	</update>
+	
+	<select id="selectActOrderExtCancel" resultType="egovMap">
+		SELECT 
+				A.sno
+			,	A.lsno
+			,	A.d_name
+			,	A.d_reason
+			,	A.d_date
+			,	A.d_memo
+			,	A.d_bank
+		FROM DAEBANG.dbo.lecture_orderext_cancel A WHERE A.lsno = #{sno}
+	</select>
+	
+	<update id="updateActOrderExtCancel">
+      	MERGE DAEBANG.dbo.lecture_orderext_cancel AS A
+       	USING (SELECT #{sno} AS sno) AS B ON (A.sno = B.sno)
+       	WHEN MATCHED THEN
+        	UPDATE SET
+					d_name		= #{dName}
+				,	d_reason		= #{dReason}
+				,	d_date			= #{dDate}
+				,	d_memo		= #{dMemo}
+				,	d_bank			= #{dBank}
+       	WHEN NOT MATCHED THEN
+        	INSERT (lsno, d_name, d_reason, d_date, d_memo, d_bank)
+        	VALUES (#{psno}, #{dName}, #{dReason}, #{dDate}, #{dMemo}, #{dBank})
+        	;
+	</update>
+	
+    <delete id="deleteActOrderExt">
+    	BEGIN TRAN
+			DELETE DAEBANG.dbo.lecture_order_ext
+			WHERE sno = #{sno};
+		COMMIT TRAN
+    </delete>
+    
+
+
+
+</mapper>

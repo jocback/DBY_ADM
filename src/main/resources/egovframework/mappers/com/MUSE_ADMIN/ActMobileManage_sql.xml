@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ActMobileManage">
+
+	<select id="selectActMobileList" resultType="egovMap">
+			<if test='actListMode.equals("PAGE") or actListMode.equals("EXCEL")'>
+			SELECT  AAA.*
+			<if test='tableNm.equals("register_device_id")'>
+			<![CDATA[		
+			 , (SELECT COUNT(sno) FROM Mobile.dbo.Unregister_device_id WHERE user_id=AAA.user_id AND device_id=AAA.device_id AND date >= AAA.date) AS un_cnt
+			 ]]>
+			</if>
+			FROM
+			(SELECT  ROW_NUMBER() OVER(ORDER BY ACT.sno <if test='!tableNm.equals("Default_Settings")'> DESC</if>) RNUM,ACT.*
+						FROM
+				(SELECT A.*
+			</if>
+			<if test='actListMode.equals("COUNT")'>
+			SELECT COUNT(*) CNT 
+			</if>
+			FROM	  Mobile.dbo.${tableNm} A
+		<![CDATA[		
+			WHERE   1=1
+		]]>
+			<if test='!searchSdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.date,120) >= #{searchSdt} ]]>
+			</if>
+			<if test='!searchEdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.date,120) <= #{searchEdt} ]]>
+			</if>
+			<if test="searchKeyword != null and !searchKeyword.equals('')">
+				<![CDATA[ AND ${searchCnd} LIKE '%' + #{searchKeyword} + '%'	]]>
+			</if>
+			<if test='actListMode.equals("PAGE")'>
+			<![CDATA[	) ACT) AAA	WHERE RNUM  BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}		]]>
+			</if>			
+			<if test='actListMode.equals("EXCEL")'>
+			<![CDATA[	) ACT) AAA		]]>
+			</if>			
+	</select>
+	
+	<select id="selectActMobileTotCnt" resultType="egovMap">
+			SELECT COUNT(*) CNT 
+			FROM	  Mobile.dbo.${tableNm} A
+	</select>
+	
+    <insert id="insertActMobileConf">
+        	MERGE Mobile.dbo.Default_Settings AS A
+	        	USING (SELECT #{sno} AS sno) AS B
+		        	ON (A.sno = B.sno)
+	        	WHEN MATCHED THEN
+		        	UPDATE SET	device_cnt=#{deviceCnt}, down_cnt=#{downCnt}
+	        	WHEN NOT MATCHED THEN
+		        	INSERT (user_id, device_cnt, down_cnt, date)
+		        	VALUES (#{userId}, #{deviceCnt}, #{downCnt}, GETDATE())
+		        	;
+    </insert>
+    
+    <insert id="deleteMobileConf">
+	       	DELETE FROM Mobile.dbo.Default_Settings WHERE sno = #{sno}
+    </insert>
+    
+    <insert id="deleteMobileDevice">
+	       	DELETE FROM Mobile.dbo.Register_Device_Id WHERE sno = #{sno}
+    </insert>
+    
+</mapper>

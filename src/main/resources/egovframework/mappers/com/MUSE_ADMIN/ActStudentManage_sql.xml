@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ActStudentManage">
+
+	<select id="selectActStudentList" resultType="egovMap">
+			<if test='actListMode.equals("PAGE") or actListMode.equals("EXCEL")'>
+			SELECT  AAA.*
+			FROM
+			(SELECT  ROW_NUMBER() OVER(ORDER BY ACT.S_IDX DESC) RNUM,ACT.*
+						FROM
+				(SELECT
+						A.S_IDX
+					,	A.S_NAME
+					,	A.S_ZIP
+					,	A.S_ADD1
+					,	A.S_ADD2
+					,	A.S_TEL
+					,	A.S_HAND
+					,	A.S_EMAIL
+					,	A.S_BIRTHDAY
+					,	A.S_SEX
+					,	DBO.FNDECODE(A.S_SEX,'W','여','남') S_SEX_NM
+					,	A.LECTURE_SDATE
+					,	A.LECTURE_EDATE
+					,	A.S_GRADE
+					,	A.S_SCHOOL
+					,	A.READY_EXAM
+					,	DBO.GETLECNAME(A.READY_EXAM) READY_EXAM_NM
+					,	A.TAKE_AREA1
+					,	A.TAKE_AREA2
+					,	A.TAKE_AREA3
+					,	A.READY_TIME
+					,	A.S_SCORE
+					,	A.EXAM_EXP
+					,	A.DIFF_SUBJECT
+					,	A.PLAN_TIME
+					,	A.S_DIFFICULTIES
+					,	A.S_STRESS
+					,	A.S_PATH
+					,	A.LECTURE_EXP
+					,	A.S_OPINION
+					,	A.THUM_ID
+					,	A.S_REMARK
+					,	A.REGDT
+			</if>
+			<if test='actListMode.equals("COUNT")'>
+			SELECT COUNT(*) CNT 
+			</if>
+			FROM	  STUDENT_T A
+		<![CDATA[		
+			WHERE   S_IDX IS NOT NULL
+		]]>
+			<if test='!sName.equals("")'>
+				<![CDATA[ AND A.S_NAME  LIKE '%' + #{sName} + '%' ]]>
+			</if>
+			<if test='!sAge.equals("")'>
+				<![CDATA[ AND DATEPART(YEAR, getdate()) - DATEPART(YEAR, S_BIRTHDAY) +1 <= ${sAge}+9 ]]>
+				<![CDATA[ AND DATEPART(YEAR, getdate()) - DATEPART(YEAR, S_BIRTHDAY) +1 >= ${sAge} ]]>
+			</if>
+			<if test='!sSex.equals("")'>
+				<![CDATA[ AND A.S_SEX = #{sSex} ]]>
+			</if>
+			<if test='!birthdayM.equals("")'>
+				<![CDATA[ AND SUBSTRING(S_BIRTHDAY, 6,2) = #{birthdayM} ]]>
+			</if>
+			<if test='!birthdayD.equals("")'>
+				<![CDATA[ AND SUBSTRING(S_BIRTHDAY, 9,2) = #{birthdayD} ]]>
+			</if>
+			<if test='!sEmail.equals("")'>
+				<![CDATA[ AND A.S_EMAIL  LIKE '%' + #{sEmail} + '%' ]]>
+			</if>
+			<if test='!sTel.equals("")'>
+				<![CDATA[ AND A.S_TEL  LIKE '%' + #{sTel} + '%' ]]>
+			</if>
+			<if test='!sHand.equals("")'>
+				<![CDATA[ AND A.S_HAND  LIKE '%' + #{sHand} + '%' ]]>
+			</if>
+			<if test='!sAdd.equals("")'>
+				<![CDATA[ AND (S_ADD1  LIKE '%' + #{sAdd} + '%' OR S_ADD2  LIKE '%' + #{sAdd} + '%') ]]>
+			</if>
+			<if test='!readyExam.equals("")'>
+				<![CDATA[ AND A.READY_EXAM = #{readyExam} ]]>
+			</if>
+			<if test='!takeArea1.equals("")'>
+				<![CDATA[ AND A.TAKE_AREA1 LIKE '%' + #{takeArea1} + '%' ]]>
+			</if>
+			<if test='!takeArea2.equals("")'>
+				<![CDATA[ AND A.TAKE_AREA2 LIKE '%' + #{takeArea2} + '%' ]]>
+			</if>
+			<if test='!takeArea3.equals("")'>
+				<![CDATA[ AND A.TAKE_AREA3 LIKE '%' + #{takeArea3} + '%' ]]>
+			</if>
+			<if test='!sGrade.equals("")'>
+				<![CDATA[ AND A.S_GRADE LIKE '%' + #{sGrade} + '%' ]]>
+			</if>
+			<if test='!sSchool.equals("")'>
+				<![CDATA[ AND A.S_SCHOOL LIKE '%' + #{sSchool} + '%' ]]>
+			</if>
+			<if test='!lectureSdate.equals("")'>
+				<![CDATA[ AND A.LECTURE_SDATE <= #{lectureSdate} ]]>
+			</if>
+			<if test='!lectureEdate.equals("")'>
+				<![CDATA[ AND A.LECTURE_EDATE >= #{lectureEdate} ]]>
+			</if>
+			<if test='!readyTime.equals("")'>
+				<![CDATA[ AND A.READY_TIME LIKE '%' + #{searchKeyword} + '%' ]]>
+			</if>
+			<if test='!sScore.equals("")'>
+				<![CDATA[ AND A.S_SCORE <= #{sScore} ]]>
+			</if>
+			<if test='!eScore.equals("")'>
+				<![CDATA[ AND A.S_SCORE >= #{eScore} ]]>
+			</if>
+			<if test='!examExp.equals("")'>
+				<![CDATA[ AND A.EXAM_EXP LIKE '%' + #{examExp} + '%' ]]>
+			</if>
+			<if test='!diffSubject.equals("")'>
+				<![CDATA[ AND A.DIFF_SUBJECT LIKE '%' + #{diffSubject} + '%' ]]>
+			</if>
+			<if test='!planTime.equals("")'>
+				<![CDATA[ AND A.PLAN_TIME LIKE '%' + #{planTime} + '%' ]]>
+			</if>
+			<if test='!sDifficulties.equals("")'>
+				<![CDATA[ AND A.S_DIFFICULTIES LIKE '%' + #{sDifficulties} + '%' ]]>
+			</if>
+			<if test='!sStress.equals("")'>
+				<![CDATA[ AND A.S_STRESS LIKE '%' + #{sStress} + '%' ]]>
+			</if>
+			<if test='!sPath.equals("")'>
+				<![CDATA[ AND A.S_PATH LIKE '%' + #{sPath} + '%' ]]>
+			</if>
+			<if test='!lectureExp.equals("")'>
+				<![CDATA[ AND A.LECTURE_EXP LIKE '%' + #{lectureExp} + '%' ]]>
+			</if>
+			<if test='!sOpinion.equals("")'>
+				<![CDATA[ AND A.S_OPINION LIKE '%' + #{sOpinion} + '%' ]]>
+			</if>
+			<if test='!sRemark.equals("")'>
+				<![CDATA[ AND A.S_REMARK LIKE '%' + #{sRemark} + '%' ]]>
+			</if>
+			<if test='!searchSdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) >= #{searchSdt} ]]>
+			</if>
+			<if test='!searchEdt.equals("")'>
+				<![CDATA[ AND CONVERT(VARCHAR(10),A.REGDT,120) <= #{searchEdt} ]]>
+			</if>
+			<if test='!returnStt.equals("")'>
+				<![CDATA[ AND A.S_IDX IN(${returnStt}) ]]>
+			</if>
+			<if test='actListMode.equals("PAGE")'>
+			<![CDATA[	) ACT) AAA	WHERE RNUM  BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}		]]>
+			</if>			
+			<if test='actListMode.equals("EXCEL")'>
+			<![CDATA[	) ACT) AAA		]]>
+			</if>			
+	</select>
+	
+	<select id="selectActStudentDetail" resultType="egovMap">
+		<![CDATA[		
+				SELECT
+						A.S_IDX
+					,	A.S_NAME
+					,	A.S_ZIP
+					,	A.S_ADD1
+					,	A.S_ADD2
+					,	A.S_TEL
+					,	A.S_HAND
+					,	A.S_EMAIL
+					,	A.S_BIRTHDAY
+					,	A.S_SEX
+					,	A.LECTURE_SDATE
+					,	A.LECTURE_EDATE
+					,	A.S_GRADE
+					,	A.S_SCHOOL
+					,	A.READY_EXAM
+					,	A.TAKE_AREA1
+					,	A.TAKE_AREA2
+					,	A.TAKE_AREA3
+					,	A.READY_TIME
+					,	A.S_SCORE
+					,	A.EXAM_EXP
+					,	A.DIFF_SUBJECT
+					,	A.PLAN_TIME
+					,	A.S_DIFFICULTIES
+					,	A.S_STRESS
+					,	A.S_PATH
+					,	A.LECTURE_EXP
+					,	A.S_OPINION
+					,	A.THUM_ID
+					,	A.S_REMARK
+					,	A.REGDT
+			FROM	  STUDENT_T A
+			WHERE   A.S_IDX = #{sIdx}
+		]]>
+	</select>
+	
+	<select id="selectActStudentMaxIdx" resultType="String">
+		<![CDATA[
+			SELECT ISNULL(MAX(S_IDX),0)+1 FROM STUDENT_T
+		]]>
+	</select>
+	
+    <insert id="insertActStudent">
+            INSERT INTO STUDENT_T 
+                (	S_IDX
+				,	S_NAME
+				,	S_ZIP
+				,	S_ADD1
+				,	S_ADD2
+				,	S_TEL
+				,	S_HAND
+				,	S_EMAIL
+				,	S_BIRTHDAY
+				,	S_SEX
+				,	LECTURE_SDATE
+				,	LECTURE_EDATE
+				,	S_GRADE
+				,	S_SCHOOL
+				,	READY_EXAM
+				,	TAKE_AREA1
+				,	TAKE_AREA2
+				,	TAKE_AREA3
+				,	READY_TIME
+				,	S_SCORE
+				,	EXAM_EXP
+				,	DIFF_SUBJECT
+				,	PLAN_TIME
+				,	S_DIFFICULTIES
+				,	S_STRESS
+				,	S_PATH
+				,	LECTURE_EXP
+				,	S_OPINION
+				,	THUM_ID
+				,	S_REMARK
+				,	REGDT
+				)
+            VALUES (
+               	#{sIdx}
+				,	#{sName}
+				,	#{sZip}
+				,	#{sAdd1}
+				,	#{sAdd2}
+				,	#{sTel}
+				,	#{sHand}
+				,	#{sEmail}
+				,	#{sBirthday}
+				,	#{sSex}
+				,	#{lectureSdate}
+				,	#{lectureEdate}
+				,	#{sGrade}
+				,	#{sSchool}
+				,	#{readyExam}
+				,	#{takeArea1}
+				,	#{takeArea2}
+				,	#{takeArea3}
+				,	#{readyTime}
+				,	#{sScore}
+				,	#{examExp}
+				,	#{diffSubject}
+				,	#{planTime}
+				,	#{sDifficulties}
+				,	#{sStress}
+				,	#{sPath}
+				,	#{lectureExp}
+				,	#{sOpinion}
+				,	#{thumId}
+				,	#{sRemark}
+				,	GETDATE()
+				);
+    </insert>
+    
+	<update id="updateActStudent">
+			UPDATE STUDENT_T SET
+					S_NAME 				= #{sName}
+				,	S_ZIP 					= #{sZip}
+				,	S_ADD1 				= #{sAdd1}
+				,	S_ADD2 				= #{sAdd2}
+				,	S_TEL 					= #{sTel}
+				,	S_HAND 				= #{sHand}
+				,	S_EMAIL 				= #{sEmail}
+				,	S_BIRTHDAY 			= #{sBirthday}
+				,	S_SEX 					= #{sSex}
+				,	LECTURE_SDATE 	= #{lectureSdate}
+				,	LECTURE_EDATE 	= #{lectureEdate}
+				,	S_GRADE 				= #{sGrade}
+				,	S_SCHOOL 			= #{sSchool}
+				,	READY_EXAM 		= #{readyExam}
+				,	TAKE_AREA1 		= #{takeArea1}
+				,	TAKE_AREA2 		= #{takeArea2}
+				,	TAKE_AREA3 		= #{takeArea3}
+				,	READY_TIME 		= #{readyTime}
+				,	S_SCORE 				= #{sScore}
+				,	EXAM_EXP 			= #{examExp}
+				,	DIFF_SUBJECT 		= #{diffSubject}
+				,	PLAN_TIME 			= #{planTime}
+				,	S_DIFFICULTIES 	= #{sDifficulties}
+				,	S_STRESS 			= #{sStress}
+				,	S_PATH 				= #{sPath}
+				,	LECTURE_EXP 		= #{lectureExp}
+				,	S_OPINION 			= #{sOpinion}
+				,	THUM_ID 				= #{thumId}
+				,	S_REMARK 			= #{sRemark}
+			WHERE S_IDX = #{sIdx}
+	</update>
+	
+    <insert id="deleteActStudent">
+			DELETE STUDENT_T WHERE S_IDX = #{sIdx}
+    </insert>
+    
+</mapper>

@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BBSMaster">
+
+	<insert id="insertBBSMasterInf" parameterType="BoardMasterVO" >
+		<![CDATA[
+			INSERT INTO BBS_MASTER
+			(
+						BBS_ID
+					,	BBS_NM
+					,	BBS_CN
+					,	FILE_YN
+					,	FILE_CNT
+					,	FILE_SIZE
+					,	USE_YN
+					,	REP_YN
+					,	CMT_YN
+					,	SEQ_YN
+					,	MAIN_YN
+					,	TOP_YN
+					,	THUM_YN
+					,	LINK_YN
+					,	HIDE_YN
+					,	LOCK_YN
+					,	TWO_YN
+					,	NEW_YN
+					,	NEW_NO
+					,	HOT_YN
+					,	HOT_NO
+					,	CATE_YN
+					,	CATE_CD
+					,	EXT_YN
+					,	EXT_FLD
+					,	POSBL_LIST
+					,	POSBL_VIEW
+					,	POSBL_WRITE
+					,	REGID
+					,	REGDT
+			)
+			VALUES
+			(
+						#{bbsId}
+					,	#{bbsNm}
+					,	#{bbsCn}
+					,	#{fileYn}
+					,	#{fileCnt}
+					,	#{fileSize}
+					,	#{useYn}
+					,	#{repYn}
+					,	#{cmtYn}
+					,	#{seqYn}
+					,	#{mainYn}
+					,	#{topYn}
+					,	#{thumYn}
+					,	#{linkYn}
+					,	#{hideYn}
+					,	#{lockYn}
+					,	#{twoYn}
+					,	#{newYn}
+					,	#{newNo}
+					,	#{hotYn}
+					,	#{hotNo}
+					,	#{cateYn}
+					,	#{cateCd}
+					,	#{extYn}
+					,	#{extFld}
+					,	#{posblList}
+					,	#{posblView}
+					,	#{posblWrite}
+					,	#{regid}
+					,	GETDATE()
+			 )			
+		]]>
+	</insert>
+	
+	<select id="selectBBSMasterInfs" parameterType="BoardMasterVO" resultType="egovMap">
+		<![CDATA[
+		SELECT * FROM ( SELECT ROW_NUMBER() OVER(ORDER BY TB.BBS_ID) rn, TB.* FROM (
+			SELECT 
+						A.BBS_ID
+					,	A.BBS_NM
+					,	A.BBS_CN
+					,	A.FILE_YN
+					,	A.FILE_CNT
+					,	A.FILE_SIZE
+					,	A.USE_YN
+					,	A.REP_YN
+					,	A.CMT_YN
+					,	A.SEQ_YN
+					,	A.MAIN_YN
+					,	A.TOP_YN
+					,	A.THUM_YN
+					,	A.LINK_YN
+					,	A.HIDE_YN
+					,	A.LOCK_YN
+					,	A.TWO_YN
+					,	A.NEW_YN
+					,	A.NEW_NO
+					,	A.HOT_YN
+					,	A.HOT_NO
+					,	A.CATE_YN
+					,	A.CATE_CD
+					,	A.EXT_YN
+					,	A.EXT_FLD
+					,	A.POSBL_LIST
+					,	A.POSBL_VIEW
+					,	A.POSBL_WRITE
+					,	CONVERT(VARCHAR(10), A.REGDT, 120) as REGDT
+			FROM
+				BBS_MASTER A
+			WHERE 1=1	AND ISNULL(USE_AT,'Y') <> 'N'
+		]]>
+			<if test="useYn != null and !useYn.equals('')">
+				AND A.USE_YN = #{useYn}
+			</if>
+			<if test="searchCnd == 0 and !searchWrd.equals('')">
+				AND (A.BBS_NM LIKE '%' + #{searchWrd} + '%' OR A.BBS_ID LIKE '%' + #{searchWrd} + '%')  		
+			</if>
+			<if test="searchCnd == 1 and !searchWrd.equals('')">
+				AND A.BBS_NM LIKE '%' + #{searchWrd} + '%' 		
+			</if>
+			<if test="searchCnd == 2 and !searchWrd.equals('')">
+				AND A.BBS_ID LIKE '%' + #{searchWrd} + '%' 		
+			</if>
+		<![CDATA[			
+			) TB ) AAA WHERE rn BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
+		]]>				
+	</select>	
+	
+	<select id="selectBBSMasterInfsCnt" parameterType="BoardMasterVO" resultType="java.lang.Integer" >
+		<![CDATA[
+			SELECT 
+				COUNT(A.BBS_ID)
+			FROM
+				BBS_MASTER A
+			WHERE 1=1 
+		]]>
+			<if test="useYn != null and !useYn.equals('')">
+				AND A.USE_YN = #{useYn}
+			</if>
+			<if test="searchCnd == 0 and !searchWrd.equals('')">
+				AND (A.BBS_NM LIKE '%' + #{searchWrd} + '%' OR A.BBS_ID LIKE '%' + #{searchWrd} + '%')  		
+			</if>
+			<if test="searchCnd == 1 and !searchWrd.equals('')">
+				AND A.BBS_NM LIKE '%' + #{searchWrd} + '%' 		
+			</if>
+			<if test="searchCnd == 2 and !searchWrd.equals('')">
+				AND A.BBS_ID LIKE '%' + #{searchWrd} + '%' 		
+			</if>
+	</select>	
+ 
+	<select id="selectBBSMasterInf" parameterType="BoardMasterVO" resultType="BoardMasterVO">
+		<![CDATA[
+			SELECT 
+						A.BBS_ID
+					,	A.BBS_NM
+					,	A.BBS_CN
+					,	A.FILE_YN
+					,	A.FILE_CNT
+					,	A.FILE_SIZE
+					,	A.USE_YN
+					,	A.REP_YN
+					,	A.CMT_YN
+					,	A.SEQ_YN
+					,	A.MAIN_YN
+					,	A.TOP_YN
+					,	A.THUM_YN
+					,	A.LINK_YN
+					,	A.HIDE_YN
+					,	A.LOCK_YN
+					,	A.TWO_YN
+					,	A.NEW_YN
+					,	A.NEW_NO
+					,	A.HOT_YN
+					,	A.HOT_NO
+					,	A.CATE_YN
+					,	A.CATE_CD
+					,	A.EXT_YN
+					,	A.EXT_FLD
+					,	A.POSBL_LIST
+					,	A.POSBL_VIEW
+					,	A.POSBL_WRITE
+					,	CONVERT(VARCHAR(10), A.REGDT, 120) as REGDT
+			FROM
+				BBS_MASTER A
+			WHERE A.BBS_ID = #{bbsId}
+		]]>				
+	</select> 
+ 
+ 	<update id="updateBBSMasterInf" parameterType="BoardMasterVO">
+ 		<![CDATA[
+			UPDATE BBS_MASTER SET 
+						BBS_NM				= #{bbsNm}
+					,	BBS_CN				= #{bbsCn}
+					,	FILE_YN				= #{fileYn}
+					,	FILE_CNT				= #{fileCnt}
+					,	FILE_SIZE				= #{fileSize}
+					,	USE_YN				= #{useYn}
+					,	REP_YN					= #{repYn}
+					,	CMT_YN				= #{cmtYn}
+					,	SEQ_YN				= #{seqYn}
+					,	MAIN_YN				= #{mainYn}
+					,	TOP_YN				= #{topYn}
+					,	THUM_YN				= #{thumYn}
+					,	LINK_YN				= #{linkYn}
+					,	HIDE_YN				= #{hideYn}
+					,	LOCK_YN				= #{lockYn}
+					,	TWO_YN				= #{twoYn}
+					,	NEW_YN				= #{newYn}
+					,	NEW_NO				= #{newNo}
+					,	HOT_YN				= #{hotYn}
+					,	HOT_NO				= #{hotNo}
+					,	CATE_YN				= #{cateYn}
+					,	CATE_CD				= #{cateCd}
+					,	EXT_YN					= #{extYn}
+					,	EXT_FLD				= #{extFld}
+					,	POSBL_LIST			= #{posblList}
+					,	POSBL_VIEW			= #{posblView}
+					,	POSBL_WRITE		= #{posblWrite}
+					,	MODID					= #{modid}
+					,	MODDT					= GETDATE()
+			WHERE BBS_ID					= #{bbsId}
+ 		]]>
+ 	</update>
+
+ 	<update id="deleteBBSMasterInf" parameterType="BoardMasterVO">
+ 		<![CDATA[
+			UPDATE BBS_MASTER SET 
+				USE_AT = 'N',
+				MODID = #{modid},
+				MODDT = GETDATE()
+			WHERE BBS_ID = #{bbsId}
+ 		]]>
+ 	</update>
+
+	<select id="selectAllBBSMaster" parameterType="egovMap" >
+		<![CDATA[
+			SELECT 
+				BBS_ID, BBS_NM
+			FROM
+				BBS_MASTER 
+			WHERE ISNULL(USE_AT,'Y') <> 'N'
+ 		]]>				
+	</select>
+	
+</mapper>

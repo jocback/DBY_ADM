@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="FaqManage">
+
+	<resultMap id="FaqManage" type="egovframework.MUSE_Rte.uss.olh.faq.service.FaqManageVO">
+		<result property="faqId" 		column="FAQ_ID"	/>
+		<result property="qestnSj" 		column="QESTN_SJ"	/>
+		<result property="qestnCn" 		column="QESTN_CN"/>
+		<result property="answerCn" 	column="ANSWER_CN"/>
+		<result property="inqireCo" 	column="RDCNT"/>
+		<result property="atchFileId" 	column="ATCH_FILE_ID"/>		
+		<result property="frstRegisterPnttm" 	column="FRST_REGIST_PNTTM"/>
+		<result property="frstRegisterId" 		column="FRST_REGISTER_ID"/>
+		<result property="lastUpdusrPnttm" 		column="LAST_UPDT_PNTTM"/>
+		<result property="lastUpdusrId" 		column="LAST_UPDUSR_ID"/>				
+		<result property="faqGb" 		column="FAQ_GB"/>				
+		<result property="faqGbNm" 		column="FAQ_GB_NM"/>				
+	</resultMap>
+	
+	<select id="selectFaqListDetail" resultMap="FaqManage">
+		<![CDATA[		
+			SELECT 	FAQ_ID,
+					QESTN_SJ,
+					QESTN_CN,
+					ANSWER_CN,
+					RDCNT,
+					ATCH_FILE_ID,
+					CONVERT(VARCHAR(10),FRST_REGIST_PNTTM,120) FRST_REGIST_PNTTM,
+					FRST_REGISTER_ID, 
+					CONVERT(VARCHAR(10),LAST_UPDT_PNTTM,120)	LAST_UPDT_PNTTM,
+					LAST_UPDUSR_ID,		
+					FAQ_GB,	 			  			 			  
+					DBO.GETCODENAME('COM054',FAQ_GB) FAQ_GB_NM			 			  			 			  
+			FROM	FAQ_T				
+			WHERE	FAQ_ID=#{faqId}				
+		]]>
+	</select>
+	
+	<select id="selectFaqList" parameterType="FaqManageSearchVO" resultType="egovMap">
+		<![CDATA[
+			SELECT FAQ_ID,
+					QESTN_SJ,
+					QESTN_CN,
+					ANSWER_CN,
+					RDCNT				INQIRE_CO,
+					ATCH_FILE_ID,  
+					CONVERT(VARCHAR,FRST_REGIST_PNTTM,120)	FRST_REGISTER_PNTTM,
+					FRST_REGISTER_ID, 
+					CONVERT(VARCHAR,LAST_UPDT_PNTTM,120)		LAST_UPDUSR_PNTTM,
+					LAST_UPDUSR_ID,
+					FAQ_GB,	
+					DBO.GETCODENAME('COM054',FAQ_GB) FAQ_GB_NM			 			  			 			  
+			FROM
+				   (
+				   SELECT  ROW_NUMBER() OVER(ORDER BY FAQ_ID DESC) RNUM,FAQ.*
+				   FROM
+				   	   	  (
+						  SELECT  FAQ_ID, QESTN_SJ, QESTN_CN, ANSWER_CN, RDCNT, ATCH_FILE_ID,  
+						  		  FRST_REGIST_PNTTM	  , FRST_REGISTER_ID, 
+								  LAST_UPDT_PNTTM	  , LAST_UPDUSR_ID, FAQ_GB			 
+						   FROM	  FAQ_T
+						   WHERE   1=1   			
+		]]>					
+			<if test="searchKeyword != null and !searchKeyword.equals('')">
+			<if test='searchCondition.euals("actAll")'>
+				<![CDATA[(QESTN_SJ LIKE '%' + #{searchKeyword} + '%' OR QESTN_CN LIKE '%' + #{searchKeyword} + '%' OR ANSWER_CN LIKE '%' + #{searchKeyword} + '%')]]>
+			</if>
+			<if test='searchCondition.euals("qestnSj")'>
+				<![CDATA[QESTN_SJ LIKE '%' + #{searchKeyword} + '%']]>
+			</if>
+			<if test='searchCondition.euals("qestnCn")'>
+				<![CDATA[QESTN_CN LIKE '%' + #{searchKeyword} + '%']]>
+			</if>
+			<if test='searchCondition.euals("answerCn")'>
+				<![CDATA[ANSWER_CN LIKE '%' + #{searchKeyword} + '%']]>
+			</if>
+			</if>
+		<![CDATA[			
+						  ) FAQ
+				   ) AAA
+			WHERE RNUM BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}					
+		]]>			
+	</select>
+	
+	<select id="selectFaqListTotCnt" parameterType="FaqManageSearchVO" resultType="int">
+		<![CDATA[
+			SELECT 	COUNT(*) totcnt
+			FROM 	FAQ_T
+			WHERE 	1=1
+		]]>			
+			<if test="searchKeyword != null and !searchKeyword.equals('')">
+			<if test='searchCondition.euals("actAll")'>
+				<![CDATA[(QESTN_SJ LIKE '%' + #{searchKeyword} + '%' OR QESTN_CN LIKE '%' + #{searchKeyword} + '%' OR ANSWER_CN LIKE '%' + #{searchKeyword} + '%')]]>
+			</if>
+			<if test='searchCondition.euals("qestnSj")'>
+				<![CDATA[QESTN_SJ LIKE '%' + #{searchKeyword} + '%']]>
+			</if>
+			<if test='searchCondition.euals("qestnCn")'>
+				<![CDATA[QESTN_CN LIKE '%' + #{searchKeyword} + '%']]>
+			</if>
+			<if test='searchCondition.euals("answerCn")'>
+				<![CDATA[ANSWER_CN LIKE '%' + #{searchKeyword} + '%']]>
+			</if>
+			</if>
+	</select>
+	
+	<insert id="insertFaqCn">	
+		<![CDATA[	
+			INSERT INTO FAQ_T
+				   (FAQ_ID
+				  , QESTN_SJ
+				  , QESTN_CN
+				  , ANSWER_CN
+				  , RDCNT
+				  , ATCH_FILE_ID
+				  , FRST_REGIST_PNTTM 
+				  , FRST_REGISTER_ID 
+				  , LAST_UPDT_PNTTM 
+				  , LAST_UPDUSR_ID
+				  , FAQ_GB)
+			VALUES ( #{faqId}
+				  , #{qestnSj}
+				  , #{qestnCn}
+				  , #{answerCn}
+				  , 0
+				  , #{atchFileId}
+				  , GETDATE()
+				  , #{frstRegisterId}
+				  , GETDATE()
+				  , #{lastUpdusrId}
+				  , #{faqGb} )
+		]]>
+	</insert>
+	
+	<update id="updateFaqInqireCo">
+		<![CDATA[		
+			UPDATE	FAQ_T	SET
+				    RDCNT= ISNULL(RDCNT,0) + 1				  			
+				  , LAST_UPDT_PNTTM=GETDATE()
+				  , LAST_UPDUSR_ID=#{lastUpdusrId}
+ 			WHERE  FAQ_ID=#{faqId}
+		]]>
+	</update>
+
+	<update id="updateFaqCn">
+		<![CDATA[
+			UPDATE	FAQ_T	SET
+					FAQ_ID=#{faqId} 
+				  , QESTN_SJ=#{qestnSj}
+				  , QESTN_CN=#{qestnCn}
+				  , ANSWER_CN=#{answerCn}
+				  , ATCH_FILE_ID=#{atchFileId}				  			
+				  , LAST_UPDT_PNTTM=GETDATE()
+				  , LAST_UPDUSR_ID=#{lastUpdusrId}
+				  , FAQ_GB=#{faqGb}
+ 			WHERE  FAQ_ID=#{faqId}
+		]]>
+	</update>
+	
+	<delete id="deleteFaqCn">
+		<![CDATA[
+			DELETE FROM FAQ_T 
+			WHERE  FAQ_ID=#{faqId}
+		]]>
+	</delete>
+	
+</mapper>

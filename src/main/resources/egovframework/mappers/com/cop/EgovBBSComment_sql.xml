@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BBSComment">
+
+	<select id="selectCommentList" parameterType="BoardCmtVO" resultType="BoardCmtVO" >
+		<![CDATA[
+		SELECT * FROM ( SELECT ROW_NUMBER() OVER(ORDER BY TB.FRST_REGIST_PNTTM ASC) rn, TB.* FROM (
+			SELECT
+				a.ANSWER_NO, a.NTT_ID, a.BBS_ID, 
+				a.WRTER_ID, a.WRTER_NM, a.PASSWORD, a.ANSWER, a.USE_AT,
+				a.FRST_REGIST_PNTTM,
+				b.USER_NM as FRST_REGISTER_ID
+			FROM
+				BBS_COMMENT a
+			LEFT OUTER JOIN V_USER_MASTER b
+				ON a.FRST_REGISTER_ID = b.USER_ID
+			WHERE
+				a.BBS_ID = #{bbsId} AND a.NTT_ID = #{nttId}
+			AND
+				a.USE_AT = 'Y'
+			) TB ) AAA WHERE rn BETWEEN #{subFirstIndex} + 1 AND #{subFirstIndex} + #{subRecordCountPerPage}
+		]]>				
+	</select>	
+	
+	<select id="selectCommentListCnt" parameterType="BoardCmtVO" resultType="java.lang.Integer" >
+		<![CDATA[
+			SELECT
+				COUNT(ANSWER_NO)
+			FROM
+				BBS_COMMENT 
+			WHERE
+				BBS_ID = #{bbsId} AND NTT_ID = #{nttId}
+			AND
+				USE_AT = 'Y'
+		]]>			
+	</select>
+	
+	<insert id="insertComment" parameterType="BoardCmtVO" >
+		
+		<![CDATA[
+			INSERT INTO BBS_COMMENT
+			(ANSWER_NO, NTT_ID, BBS_ID, WRTER_ID, WRTER_NM, PASSWORD, 
+			 ANSWER, USE_AT, 
+			 FRST_REGISTER_ID, FRST_REGIST_PNTTM
+			 )
+			VALUES
+			( #{commentNo}, #{nttId}, #{bbsId}, #{wrterId}, #{wrterNm}, #{commentPassword}, 
+			  #{commentCn}, 'Y',
+			  #{frstRegisterId}, GETDATE()
+			 )
+		]]>
+	</insert>
+	
+	<update id="deleteComment" parameterType="BoardCmtVO">
+		<![CDATA[
+			UPDATE BBS_COMMENT
+			SET USE_AT = 'N'
+			WHERE ANSWER_NO = #{commentNo}
+		]]>			
+	</update>
+	
+	<select id="selectComment" parameterType="BoardCmtVO" resultType="BoardCmtVO" >
+		<![CDATA[
+			SELECT
+				a.ANSWER_NO, a.NTT_ID, a.BBS_ID, 
+				a.WRTER_ID, a.WRTER_NM, a.PASSWORD, a.ANSWER, a.USE_AT,
+				a.FRST_REGIST_PNTTM,
+				b.USER_NM as FRST_REGISTER_NM
+			FROM
+				BBS_COMMENT a
+			LEFT OUTER JOIN V_USER_MASTER b
+				ON a.FRST_REGISTER_ID = b.USER_ID
+			WHERE
+				a.ANSWER_NO = #{commentNo}
+
+		]]>				
+	</select> 
+
+ 	 <update id="updateComment" parameterType="BoardCmtVO">
+ 		<![CDATA[
+			UPDATE BBS_COMMENT SET 
+				WRTER_NM = #{wrterNm},
+				PASSWORD = #{commentPassword},
+				ANSWER = #{commentCn},
+				LAST_UPDUSR_ID = #{lastUpdusrId},
+				LAST_UPDT_PNTTM = GETDATE()
+			WHERE ANSWER_NO = #{commentNo}
+ 		]]>
+ 	</update>
+ 	
+ 	<select id="getCommentPassword" parameterType="BoardCmtVO" resultType="java.lang.String">
+		<![CDATA[
+			SELECT
+				PASSWORD
+			FROM
+				BBS_COMMENT	
+			WHERE ANSWER_NO = #{commentNo}	
+		]]>
+	</select>
+</mapper>

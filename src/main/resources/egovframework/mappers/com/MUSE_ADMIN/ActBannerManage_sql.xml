@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ActBannerManage">
+
+	<select id="selectActBannerList" parameterType="ActManageSearchVO" resultType="egovMap">
+		<![CDATA[
+				SELECT  
+							IDX
+						,	T_SEQ
+						,	DBO.GETCODENAME('COM056',T_PART) T_PART_NM
+						,	T_NAME
+						,	T_URL
+						,	T_TARGET
+						,	T_SDT
+						,	T_EDT
+						,	T_RCNT
+						,	USE_YN
+						,	FILE_ID1
+						,	FILE_ID2
+						,	FILE_ID3
+						,	MODEMP
+						,	CONVERT(VARCHAR(10), A.REGDT, 120) REGDT
+						,	CONVERT(VARCHAR(10), A.MODDT, 120) MODDT
+			FROM	  BANNER_T A
+			WHERE   1=1 AND DELDT IS NULL
+		]]>					
+			<if test='!searchOp1.equals("")'>
+				<![CDATA[	AND A.T_PART = #{searchOp1}	]]>
+			</if>
+			<if test='!searchKeyword.equals("")'>
+				<if test='searchCnd.equals("actName")'>
+				<![CDATA[	AND A.T_NAME LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("actUrl")'>
+				<![CDATA[	AND A.T_URL LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+			</if>
+			<![CDATA[	ORDER BY A.T_SEQ, A.T_NAME		]]>			
+	</select>
+	
+	<select id="selectActBannerListTotCnt" parameterType="ActManageSearchVO" resultType="int">
+		<![CDATA[
+			SELECT 	COUNT(*) totcnt
+			FROM	  BANNER_T A
+			WHERE   1=1 AND DELDT IS NULL
+		]]>					
+			<if test='!searchOp1.equals("")'>
+				<![CDATA[	AND A.T_PART = #{searchOp1}	]]>
+			</if>
+			<if test='!searchKeyword.equals("")'>
+				<if test='searchCnd.equals("actName")'>
+				<![CDATA[	AND A.T_NAME LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("actUrl")'>
+				<![CDATA[	AND A.T_URL LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+			</if>
+	</select>
+	
+	<select id="selectActBannerDetail" resultType="egovMap">
+		<![CDATA[		
+				SELECT
+							IDX
+						,	T_SEQ
+						,	T_PART
+						,	T_NAME
+						,	T_URL
+						,	T_TARGET
+						,	T_OPDT
+						,	T_SDT
+						,	T_EDT
+						,	T_RCNT
+						,	USE_YN
+						,	FILE_ID1
+						,	FILE_ID2
+						,	FILE_ID3
+						,	MODEMP
+						,	CONVERT(VARCHAR(10), A.REGDT, 120) REGDT
+						,	CONVERT(VARCHAR(10), A.MODDT, 120) MODDT
+				FROM	  BANNER_T A
+			WHERE   A.IDX = #{idx}
+		]]>
+	</select>
+	
+	<select id="selectActBannerInfoOne" parameterType="ActBannerManageVO" resultType="String">
+		<![CDATA[
+				SELECT 	ISNULL(${empField},'') LV
+				FROM	  BANNER_T A
+				WHERE   1=1 AND DELDT IS NULL
+		]]>
+			<if test='!idx.equals("")'>
+			<![CDATA[	AND A.IDX = #{idx}	]]>
+			</if>
+	</select>
+	
+	<update id="updateActBanner">
+			UPDATE BANNER_T SET
+				<if test='frmMode.equals("edit")'>
+							T_PART				= #{tPart}
+						,	T_NAME			= #{tName}
+						,	T_URL				= #{tUrl}
+						,	T_TARGET			= #{tTarget}
+						,	T_OPDT			= #{tOpdt}	
+						,	T_SDT				= #{tSdt}	
+						,	T_EDT				= #{tEdt}
+						,	USE_YN			= #{useYn}
+						,	FILE_ID1			= #{fileId1}
+						,	FILE_ID2			= #{fileId2}
+						,	FILE_ID3			= #{fileId3}
+						,	MODEMP			= #{modemp}
+						,	MODDT				=	GETDATE()
+				</if>
+				<if test='frmMode.equals("del")'>
+							DELDT				=	GETDATE()
+				</if>
+			WHERE IDX = #{idx}
+	</update>
+	
+    <insert id="insertActBanner">
+            INSERT INTO BANNER_T 
+                (
+							IDX
+						,	T_SEQ
+						,	T_PART
+						,	T_NAME
+						,	T_URL
+						,	T_TARGET
+						,	T_OPDT
+						,	T_SDT
+						,	T_EDT
+						,	T_RCNT
+						,	USE_YN
+						,	FILE_ID1
+						,	FILE_ID2
+						,	FILE_ID3
+						,	MODEMP
+						,	REGDT
+				)
+            VALUES (
+						(SELECT ISNULL(MAX(IDX),0)+1 FROM  BANNER_T)
+					,	(SELECT ISNULL(MAX(T_SEQ),0)+1 FROM  BANNER_T WHERE T_PART = #{tPart})
+					,	#{tPart}
+					,	#{tName}
+					,	#{tUrl}
+					,	#{tTarget}
+					,	#{tOpdt}
+					,	#{tSdt}
+					,	#{tEdt}
+					,	0
+					,	#{useYn}
+					,	#{fileId1}
+					,	#{fileId2}
+					,	#{fileId3}
+					,	#{modemp}
+					,	GETDATE()
+				)
+    </insert>
+    
+	<update id="updateActBannerSeq">
+		<![CDATA[	
+			UPDATE BANNER_T SET
+						T_SEQ = #{tSeq}
+			WHERE IDX = #{idx}
+		]]>
+	</update>
+	
+	<delete id="deleteActBanner">
+		<![CDATA[	
+			DELETE BANNER_T
+			WHERE IDX = #{idx}
+		]]>
+	</delete>
+	
+</mapper>

@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ActGroupManage">
+
+	<select id="selectActGroupInfoOne" parameterType="ActGroupManageVO" resultType="String">
+		<![CDATA[
+				SELECT 	ISNULL(${grField},'') LV
+				FROM	  INFO_AUTHOGROUP A
+				WHERE   1=1 AND A.DELDT IS NULL
+		]]>
+			<if test="groupId != null and !groupId.equals('')">
+			<![CDATA[ AND A.GROUP_ID = #{groupId}	]]>
+			</if>
+			<if test="groupDc != null and !groupDc.equals('')">
+			<![CDATA[ AND A.GROUP_DC <> #{groupDc}	]]>
+			</if>
+			<if test="groupNm != null and !groupNm.equals('')">
+			<![CDATA[ AND A.GROUP_NM = #{groupNm}	]]>
+			</if>
+	</select>
+	
+	<select id="selectActAuthInfoOne" parameterType="ActGroupManageVO" resultType="int">
+		<![CDATA[
+				SELECT		COUNT(*)
+				FROM		INFO_AUTH A
+				WHERE		A.GROUP_ID = #{groupId} AND A.MENU_CODE = #{menuCode} 
+		]]>
+	</select>
+	
+	<select id="popActGroupList" parameterType="ActManageSearchVO" resultType="egovMap">
+		<![CDATA[
+				SELECT  A.GROUP_ID
+						,	A.GROUP_NM
+			FROM	  INFO_AUTHOGROUP A
+			WHERE   1=1 AND A.DELDT IS NULL
+		]]>					
+			<if test="searchKeyword != null and !searchKeyword.equals('')">
+				<if test='searchCnd.equals("groupNm")'>
+				<![CDATA[ AND A.GROUP_NM LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("groupDc")'>
+				<![CDATA[ AND A.GROUP_DC LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+			</if>
+			<![CDATA[	ORDER BY GROUP_LEVEL DESC		]]>			
+	</select>
+	
+	<select id="selectActGroupList" parameterType="ActManageSearchVO" resultType="egovMap">
+		<![CDATA[
+			SELECT  *
+			FROM
+			(SELECT  ROW_NUMBER() OVER(ORDER BY GROUP_LEVEL DESC) RNUM,ACT.*
+			FROM
+				(SELECT  A.GROUP_ID
+						,	A.GROUP_NM
+						,	A.GROUP_DC
+						,	A.GROUP_LEVEL
+						,	DBO.GETCODENAME('COM043',A.GROUP_LEVEL) GROUP_LEVEL_NM
+						,	CONVERT(VARCHAR(10), A.REGDT, 120) REGDT
+			FROM	  INFO_AUTHOGROUP A
+			WHERE   1=1 AND A.DELDT IS NULL
+		]]>					
+			<if test="searchKeyword != null and !searchKeyword.equals('')">
+				<if test='searchCnd.equals("groupNm")'>
+				<![CDATA[ AND A.GROUP_NM LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("groupDc")'>
+				<![CDATA[ AND A.GROUP_DC LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+			</if>
+			<![CDATA[	) ACT) AAA	WHERE RNUM BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}		]]>			
+	</select>
+	
+	<select id="selectActGroupListTotCnt" parameterType="ActManageSearchVO" resultType="int">
+		<![CDATA[
+			SELECT 	COUNT(*) totcnt
+			FROM	  INFO_AUTHOGROUP A
+			WHERE   1=1 AND A.DELDT IS NULL
+		]]>
+			<if test="searchKeyword != null and !searchKeyword.equals('')">
+				<if test='searchCnd.equals("groupNm")'>
+				<![CDATA[ AND A.GROUP_NM LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("groupDc")'>
+				<![CDATA[ AND A.GROUP_DC LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+			</if>
+	</select>
+	
+	<select id="selectActGroupDetail" resultType="egovMap">
+		<![CDATA[		
+			SELECT A.GROUP_ID
+						,	A.GROUP_NM
+						,	A.GROUP_DC
+						,	A.GROUP_LEVEL
+						,	CONVERT(VARCHAR(10), A.REGDT, 120) REGDT
+						,	CONVERT(VARCHAR(10), A.MODDT, 120) MODDT
+			FROM	  INFO_AUTHOGROUP A
+			WHERE   A.GROUP_ID = #{groupId} AND A.DELDT IS NULL
+		]]>
+	</select>
+	
+	<update id="updateActGroup">
+			UPDATE INFO_AUTHOGROUP SET
+			<if test='deldt.equals("edit")'>
+					GROUP_NM = #{groupNm}
+				,	GROUP_DC	=	#{groupDc}
+				,	MODEMP = #{modemp}
+				,	MODDT = GETDATE()
+			</if>
+			<if test='deldt.equals("del")'>
+					MODEMP = #{modemp}
+				,	DELDT = GETDATE()
+			</if>
+			WHERE GROUP_ID = #{groupId}
+	</update>
+	
+	<insert id="insertActGroup">	
+		<![CDATA[	
+			INSERT INTO INFO_AUTHOGROUP
+				   (GROUP_ID
+					,GROUP_NM
+					,GROUP_DC
+					,GROUP_LEVEL
+					,MODEMP
+					,REGDT
+					,MODDT)
+			VALUES 
+				   (#{groupId}
+					,#{groupNm}
+					,#{groupDc}
+					,#{groupLevel}
+					,#{modemp}
+					,GETDATE()
+					,GETDATE())
+		]]>
+	</insert>
+
+	<select id="selectActGroupAuthList" parameterType="ActGroupManageVO" resultType="egovMap">
+		<![CDATA[
+				SELECT  A.GROUP_ID
+						,	A.MENU_CODE
+			FROM	  INFO_AUTH A
+			WHERE   A.GROUP_ID = #{groupId}
+		]]>					
+			<![CDATA[	ORDER BY MENU_CODE ASC		]]>			
+	</select>
+	
+	<insert id="insertActGroupAuth">	
+		<![CDATA[	
+			INSERT INTO INFO_AUTH
+				   (GROUP_ID
+					,MENU_CODE
+					,REGEMP
+					,REGDT)
+			VALUES 
+				   (#{groupId}
+					,#{menuCode}
+					,#{modemp}
+					,GETDATE())
+		]]>
+	</insert>
+
+	<delete id="deleteActGroupAuth">
+			DELETE FROM INFO_AUTH WHERE GROUP_ID = #{groupId}
+	</delete>
+
+</mapper>

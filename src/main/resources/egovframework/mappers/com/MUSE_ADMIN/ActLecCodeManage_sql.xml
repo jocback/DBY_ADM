@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ActLecCodeManage">
+
+	<select id="selectLecCodeManageList" parameterType="ActLecCodeManageVO" resultType="egovMap">
+		<![CDATA[
+			SELECT 
+				A.CODE_ID CODE
+			     ,  A.CODE_ID
+			     ,  A.CODE_NM
+			     ,  A.CODE_DC
+			     ,  A.CODE_SQ
+			     ,  A.USE_YN
+			  FROM  LEC_CODE   A
+			 WHERE DEL_DT IS NULL AND SUBSTRING(A.CODE_ID,1,2) = #{codeGb}
+		]]>
+			<if test='searchCnd.equals("1")'>
+				<![CDATA[ AND A.CODE_ID LIKE '%' + #{searchKeyword} + '%']]>
+			</if>
+			<if test='searchCnd.equals("2")'>
+				<![CDATA[ AND A.CODE_NM LIKE '%' + #{searchKeyword} + '%']]>
+			</if>
+			<if test='!searchOp1.equals("")'>
+				<![CDATA[ AND ISNULL(A.USE_YN,'Y') = #{searchOp1}]]>
+			</if>
+		<![CDATA[
+			 ORDER BY A.CODE_SQ ASC, A.CODE_ID ASC
+		]]>
+
+	</select>
+
+	<select id="selectLecCodeManageDetail" parameterType="ActLecCodeManageVO" resultType="ActLecCodeManageVO">
+		<![CDATA[
+			SELECT 
+				A.CODE_ID CODE
+			     ,  A.CODE_ID
+			     ,  A.CODE_NM
+			     ,  A.CODE_DC
+			     ,  A.CODE_SQ
+			     ,  A.USE_YN
+			  FROM  LEC_CODE   A
+			 WHERE DEL_DT IS NULL AND A.CODE_ID = #{codeId}
+		]]>
+	</select>
+
+	<insert id="insertLecCodeManage">
+		<![CDATA[
+		    INSERT
+		      INTO  LEC_CODE
+		         (  CODE_ID
+		         ,  CODE_NM
+		         ,  CODE_DC
+		         ,  CODE_SQ
+		         ,  USE_YN
+		         ,  REG_DT
+		         ,  REG_ID
+		         )
+		    VALUES
+		         (  (SELECT REPLACE(REPLACE(ISNULL(max(code_id),#{codeGb}+'00000'),#{codeGb},'9999')+1,'9999',#{codeGb}) 
+		         		FROM LEC_CODE WHERE SUBSTRING(CODE_ID,1,2)=#{codeGb})
+		         ,  #{codeNm}
+		         ,  #{codeDc}
+		         ,  #{codeSq}
+		         ,  #{useYn}
+		         ,  GETDATE()
+		         ,  #{regId}
+		         )
+		]]>
+	</insert>
+
+	<update id="updateLecCodeManage">
+		<![CDATA[
+			UPDATE  LEC_CODE
+				SET  CODE_NM			= #{codeNm}
+						,  CODE_DC		= #{codeDc}
+						,  CODE_SQ		= #{codeSq}
+						,  USE_YN			= #{useYn}
+						,  MOD_DT		= GETDATE()
+						,  MOD_ID			= #{modId}
+				 WHERE  CODE_ID		= #{codeId}
+		]]>
+	</update>
+
+	<update id="updateActLecCodeSeq">
+		<![CDATA[
+			UPDATE  LEC_CODE
+				SET   CODE_SQ			= #{codeSq}
+				WHERE  CODE_ID		= #{codeId}
+		]]>
+	</update>
+
+	<delete id="deleteLecCodeManage">
+		<![CDATA[
+			UPDATE  LEC_CODE
+				SET  USE_YN				= 'N'
+						, DEL_DT			= GETDATE()
+						, DEL_ID			= #{delId}
+				 WHERE  CODE_ID		= #{codeId}
+		]]>
+	</delete>
+
+
+</mapper>

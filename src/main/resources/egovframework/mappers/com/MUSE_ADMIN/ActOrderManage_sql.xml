@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ActOrderManage">
+
+	<select id="selectActOrderList" resultType="egovMap">
+			<if test='actListMode.equals("PAGE") or actListMode.equals("EXCEL")'>
+			SELECT AAA.*
+			FROM
+			(SELECT  ROW_NUMBER() OVER(ORDER BY ACT.o_date DESC, ACT.goods_type DESC, ACT.sno DESC) RNUM, ACT.*
+				FROM
+				(SELECT * FROM V_ORDER WHERE
+				</if> 
+				<if test='actListMode.equals("COUNT")'>
+				SELECT COUNT(*) CNT FROM V_ORDER WHERE
+				</if>
+					<if test="searchOp1 != null and !searchOp1.equals('')">
+					goods_type = #{searchOp1}
+					</if>
+					<if test='searchOp1.equals("동영상")'>
+					AND sno in(select min(sno) from DAEBANG.dbo.lecture_order2 where lsno = osno)
+					</if>
+					<if test="jumun != null and !jumun.equals('')">
+					AND (jumun='L'+#{jumun} OR jumun='B'+#{jumun})
+					</if>
+					<if test="searchArr1 != null and !searchArr1.equals('')">
+					AND status2 in
+					(<foreach item="item" index="index" collection="searchArr1" open="" close="" separator=",">
+						#{item}
+					</foreach>)
+					</if>
+					<if test="searchArr2 != null and !searchArr2.equals('')">
+					AND 
+					<foreach item="item" index="index" collection="searchArr2" open="(" close=")" separator="OR">
+						method2 LIKE '%' + #{item} + '%' 
+					</foreach>
+					</if>
+					<if test="sno != null and !sno.equals('')">
+					AND sno=#{sno}
+					</if>
+					<if test="uid != null and !uid.equals('')">
+					AND uid=#{uid}
+					</if>
+					<if test='!searchSdt.equals("")'>
+						<![CDATA[ AND o_date >= #{searchSdt} ]]>
+					</if>
+					<if test='!searchEdt.equals("")'>
+						<![CDATA[ AND o_date <= #{searchEdt} ]]>
+					</if>
+			<if test="searchKeyword != null and !searchKeyword.equals('')">
+				<if test='searchCnd.equals("1")'>
+				<![CDATA[ AND o_name LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("2")'>
+				<![CDATA[ AND jumin LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("3")'>
+				<![CDATA[ AND b_name LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("4")'>
+				<![CDATA[ AND uid = #{searchKeyword}	]]>
+				</if>
+				<if test='searchCnd.equals("5")'>
+				<![CDATA[ AND goods LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("6")'>
+				<![CDATA[ AND fname LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+				<if test='searchCnd.equals("7")'>
+				<![CDATA[ AND memo2 LIKE '%' + #{searchKeyword} + '%'	]]>
+				</if>
+			</if>
+				<if test='actListMode.equals("EXCEL")'>
+				) ACT) AAA
+				</if>			
+				<if test='actListMode.equals("PAGE")'>
+				) ACT) AAA	WHERE RNUM  BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}
+				</if>			
+	</select>
+   
+	<select id="selectActOrderSubList" resultType="egovMap">
+		SELECT 
+				A.sno
+			,	A.lsno
+			,	A.lecture_sno
+			,	A.goods
+			,	A.price
+			,	A.price2
+			,	A.ea
+			,	A.idx
+			,	A.yn
+			,	A.pro
+			,	A.gigan_day
+			,	A.isValid
+			,	A.pcInfo
+			,	A.writeday
+			,	convert(varchar(10),A.sin_date,120) sin_date
+			,	A.hit
+			,	A.status2
+			,	A.sian
+			,	A.mobile_yn
+			,	(SELECT jong_new FROM DAEBANG.dbo.lecture_order WHERE sno = #{psno}) jong_new
+		FROM DAEBANG.dbo.lecture_order2 A WHERE lsno = #{psno}
+		<if test="sno != null and !sno.equals('')"><![CDATA[ AND sno <> #{sno} ]]></if>
+		 ORDER BY sno ASC
+	</select>
+   
+	<select id="selectActOrderDetail" resultType="egovMap">
+		SELECT A.*, B.USER_ID M_ID, B.USER_NM M_NAME, B.GROUP_ID, DBO.GETCODENAME('COM044',B.GROUP_ID) M_GUBUN_NM
+		FROM DAEBANG.dbo.lecture_order A
+			LEFT OUTER JOIN 
+			V_MEMBER_MASTER B
+			ON A.uid = B.USER_ID 
+		WHERE A.sno = #{psno}
+	</select>
+	
+	<select id="selectActOrderSubDetail" resultType="egovMap">
+		SELECT 
+				A.sno
+			,	A.lsno
+			,	A.lecture_sno
+			,	A.goods
+			,	A.price
+			,	A.price2
+			,	A.ea
+			,	A.idx
+			,	A.yn
+			,	A.pro
+			,	A.gigan_day
+			,	A.isValid
+			,	A.pcInfo
+			,	A.writeday
+			,	convert(varchar(10),A.sin_date,120) sin_date
+			,	A.hit
+			,	A.status2
+			,	A.sian
+			,	A.mobile_yn
+			, (SELECT jong_new FROM DAEBANG.dbo.lecture_order WHERE sno = #{psno}) jong_new
+			, (SELECT payday FROM DAEBANG.dbo.lecture_order WHERE sno = #{psno}) payday
+			, (SELECT uid FROM DAEBANG.dbo.lecture_order WHERE sno = #{psno}) uid
+		FROM DAEBANG.dbo.lecture_order2 A WHERE A.lsno = #{psno} AND A.sno = #{sno}
+	</select>
+	
+	<update id="updateActOrderBasic">
+		UPDATE DAEBANG.dbo.lecture_order SET
+				method			= #{method2}
+			,	fname			= #{fname}
+				<if test="sian != null and !sian.equals('')">, sian = #{sian}</if>
+				<if test="bank != null and !bank.equals('')">, bank = #{bank}</if>
+				<if test="bName != null and !bName.equals('')">, b_name = #{bName}</if>
+				<if test="payday != null and !payday.equals('')">, payday = #{payday}</if>
+			,	r_name			= #{rName}
+			,	r_email			= #{rEmail}
+			,	r_tel				= #{rTel}
+			,	r_hand			= #{rHand}
+			,	r_zip				= #{rZip}
+			,	r_add			= #{rAdd}
+			,	r_add2			= #{rAdd2}
+			,	memo			= #{memo}
+			,	memo2			= #{memo2}
+			,	send				= #{send}
+		WHERE sno= #{sno};
+	</update>
+	
+	<update id="updateActOrder">
+		BEGIN TRAN
+			UPDATE DAEBANG.dbo.lecture_order2 SET
+					sin_date		= #{sinDate}
+				,	price2			= #{price2}
+				,	status2			= #{status2}
+				,	mobile_yn		= #{mobileYn}
+				,	sian				= (case #{status2} when '일시정지' then (case when status2 = '입금요' or status2 = '수강중' then convert(varchar(10), GETDATE(),120) end) end)
+				,	gigan_day		= #{giganDay}
+			WHERE lsno = #{psno} AND sno = #{sno};
+
+			UPDATE DAEBANG.dbo.lecture_order SET
+					p_total			= (SELECT SUM(price2) FROM DAEBANG.dbo.lecture_order2 WHERE lsno = #{psno})
+				<if test='status2.equals("수강중") or status2.equals("일시정지")'>
+				,	payday			= (CASE WHEN ISNULL(payday,'')='' THEN convert(varchar(10), GETDATE(),120) ELSE payday END)
+				</if>
+			WHERE sno= #{psno};
+		COMMIT TRAN
+	</update>
+	
+	<select id="selectActOrderCancel" resultType="egovMap">
+		SELECT 
+				A.sno
+			,	A.lsno
+			,	A.d_name
+			,	A.d_reason
+			,	A.d_date
+			,	A.d_memo
+			,	A.d_bank
+		FROM DAEBANG.dbo.lecture_order_cancel A WHERE A.lsno = #{psno}
+	</select>
+	
+	<update id="updateActOrderCancel">
+      	MERGE DAEBANG.dbo.lecture_order_cancel AS A
+       	USING (SELECT #{sno} AS sno) AS B ON (A.sno = B.sno)
+       	WHEN MATCHED THEN
+        	UPDATE SET
+					d_name		= #{dName}
+				,	d_reason		= #{dReason}
+				,	d_date			= #{dDate}
+				,	d_memo		= #{dMemo}
+				,	d_bank			= #{dBank}
+       	WHEN NOT MATCHED THEN
+        	INSERT (lsno, d_name, d_reason, d_date, d_memo, d_bank)
+        	VALUES (#{psno}, #{dName}, #{dReason}, #{dDate}, #{dMemo}, #{dBank})
+        	;
+	</update>
+	
+    <delete id="deleteActOrder">
+    	BEGIN TRAN
+			DELETE DAEBANG.dbo.lecture_order
+			WHERE sno = #{psno};
+
+			DELETE DAEBANG.dbo.lecture_order2
+			WHERE lsno = #{psno};
+		COMMIT TRAN
+    </delete>
+    
+
+	<select id="selectActOrderCartList" resultType="egovMap">
+			SELECT
+						A.OC_IDX
+					,	A.M_ID
+					,	A.OC_PIDX
+					,	A.OC_BOOIDX
+					,	A.OC_GUBUN
+					,	A.OC_LECIDX
+					,	A.OC_LECMOD
+					,	A.OC_LECDAY
+					,	A.OC_QNT
+					,	A.OC_PRICE
+					,	A.OC_ESTI
+					,	A.OC_ESTI_PRICE
+					,	A.REGDT
+					, (CASE OC_PIDX WHEN '0' THEN (SELECT MV_SUBJECT FROM LECTURE_T WHERE MV_IDX = OC_LECIDX)
+					ELSE (SELECT CO_SUBJECT FROM COLLEGE_T WHERE CO_IDX = OC_PIDX) END) OC_SUBJECT
+					, (CASE OC_GUBUN WHEN '13' THEN (SELECT BM_SUBJECT FROM BOOK_MA WHERE BM_IDX = OC_BOOIDX) END) OC_BOOK
+			FROM	  ORDER_CART A
+			WHERE   1=1
+			<if test="mId != null and !mId.equals('')">
+			AND A.M_ID = #{mId}
+			</if>
+	</select>
+	
+    <insert id="deleteActOrderCart">
+			DELETE ORDER_CART
+			WHERE M_ID = #{mId}
+    </insert>
+
+    <!-- 주문관리 리스트 액션  s  -->
+	<update id="transActOrderStatus">
+		BEGIN TRAN
+			UPDATE DAEBANG.dbo.lecture_order2 SET
+					status2			= #{status2}
+				,	sian				= #{sian}
+				,	gigan_day		= #{giganDay}
+			WHERE lsno = #{psno} AND sno = #{sno};
+
+			UPDATE DAEBANG.dbo.lecture_order SET
+					p_total			= (SELECT SUM(price2) FROM DAEBANG.dbo.lecture_order2 WHERE lsno = #{psno})
+				<if test='status2.equals("수강중") or status2.equals("일시정지")'>
+				,	payday			= (CASE WHEN ISNULL(payday,'')='' THEN convert(varchar(10), GETDATE(),120) ELSE payday END)
+				</if>
+			WHERE sno= #{psno};
+		COMMIT TRAN
+	</update>
+	<update id="transActOrderGigan">
+		BEGIN TRAN
+			UPDATE DAEBANG.dbo.lecture_order2 SET
+					gigan_day		= gigan_day+#{giganDay}*1
+			WHERE lsno IN (${psno});
+
+			UPDATE DAEBANG.dbo.lecture_order SET
+					gigan_day		= gigan_day+#{giganDay}*1
+			WHERE sno IN (${psno});
+		COMMIT TRAN
+	</update>
+	<update id="transActOrderPrice2">
+		BEGIN TRAN
+			UPDATE DAEBANG.dbo.lecture_order2 SET
+					price2		= #{price2}
+			WHERE lsno IN (${psno});
+		COMMIT TRAN
+	</update>
+	<update id="transActOrderSinDate">
+		BEGIN TRAN
+			UPDATE DAEBANG.dbo.lecture_order2 SET
+					sin_date		= #{sinDate}
+				,	gigan_day		= #{giganDay}
+			WHERE lsno IN (${psno});
+
+			UPDATE DAEBANG.dbo.lecture_order SET
+					sin_date		= #{sinDate}
+				,	gigan_day		= #{giganDay}
+			WHERE sno IN (${psno});
+		COMMIT TRAN
+	</update>
+    <update id="transActOrderClosing">
+    	<![CDATA[
+			UPDATE DAEBANG.dbo.lecture_order2 SET status2 = '수강종료'
+			FROM DAEBANG.dbo.lecture_order2 AS A LEFT outer join (SELECT osno, ISNULL(SUM(gigan_day),0) gigan FROM DAEBANG.dbo.lecture_order_ext where status='수강중' group BY osno) B ON A.sno = B.osno
+			WHERE A.status2 = '수강중' 
+				AND DATEADD(dd, (CAST(A.gigan_day AS int)+ISNULL(B.gigan,0))-1, CAST(A.sin_date AS date)) < CAST(getdate() AS date)
+		]]>
+    </update>
+	<update id="transActOrderJongLect">
+		BEGIN TRAN
+			UPDATE DAEBANG.dbo.lecture_order2 SET
+					pro	= #{jongLecture}
+			WHERE sno = #{sno};
+		COMMIT TRAN
+	</update>
+    <!-- 주문관리 리스트 액션  e  -->
+    
+    <!-- 매일 새벽 2시, 14일 경과된 장바구니 비우기 배치처리 -->
+    <!-- 2틀 경과한 배송중인 건 배송완료 처리 -->
+    <insert id="deleteActOrderCartExpired">
+    	BEGIN TRAN
+    	<![CDATA[
+			DELETE FROM ORDER_CART where CONVERT(VARCHAR(10),REGDT,120) < #{oDate};
+			UPDATE DAEBANG.dbo.book_order SET status = '배송완료' WHERE status = '배송중' AND delivery_start_date < #{payday};
+		]]>
+		COMMIT TRAN
+    </insert>
+    
+</mapper>

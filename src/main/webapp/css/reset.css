@@ -1,0 +1,79 @@
+@import url(http://fonts.googleapis.com/earlyaccess/notosanskr.css);
+html{
+  height:100%;
+}
+body {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+html {
+  overflow-y: scroll;
+  font-size: 14px;
+}
+body {
+  position: relative;
+  word-break: keep-all;
+}
+body,
+div,
+dl,
+dt,
+dd,
+ul,
+ol,
+li,
+h1,
+h2,
+h3,
+h4,
+h5,
+form,
+fieldset,
+p,
+button,
+input {
+  margin: 0;
+  padding: 0;
+  font-size:inherit;
+}
+dl,
+ul,
+ol,
+li {
+  list-style: none;
+}
+textarea {
+  resize: none;
+}
+a {
+  text-decoration: none;
+  color: inherit;
+}
+a:hover {
+  text-decoration: none;
+  color: inherit;
+}
+a:focus {
+  text-decoration: none;
+  color: inherit;
+}
+a:-webkit-any-link {
+  text-decoration: none;
+}
+button {
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+label{margin-bottom:0;}
+.btn.focus,
+.btn:focus,
+.btn:hover{color:inherit}
+img{vertical-align:top;}
+fieldset{border:none;margin:0;padding:0;}
+table{border:0;padding:0;border-spacing:0;}
+table th,table td{padding:0;border:0;border-spacing:0;}
+table caption,
+legend{font-size:0;text-indent:-9999px;margin:0;border:none;padding:0;}

@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ActStatsManage">
+
+	<select id="selectActStatsKORListTotList" parameterType="ActManageSearchVO" resultType="egovMap">
+	<![CDATA[
+			SELECT SUM(VCNT) AS Total, SUBSTRING(A.YM, 5, 6) AS TotM
+			FROM (SELECT WSITE, VCNT, SUBSTRING(OCCRRNC_DE, 1, 6) AS YM 
+				FROM WEBLOG_DAY WHERE WSITE='FRONT' and SUBSTRING(OCCRRNC_DE, 1, 4) = CONVERT(VARCHAR(4),GETDATE(),120)
+			) A
+		]]>					
+			<![CDATA[	GROUP BY A.YM ORDER BY A.YM	]]>	
+	</select>
+
+	<select id="selectActStatsDateList" parameterType="ActManageSearchVO" resultType="egovMap">
+		<![CDATA[
+			SELECT  *
+			FROM
+			(SELECT  ROW_NUMBER() OVER(ORDER BY OCCRRNC_DE DESC) RNUM,ACT.*
+			FROM
+				(SELECT B.OCCRRNC_DE, DATENAME(dw,CONVERT(VARCHAR(8),OCCRRNC_DE, 112)) DAYNM, SUM(B.RCNT) RCNT, SUM(B.VCNT) VCNT
+				FROM WEBLOG_DAY B WHERE WSITE='FRONT'
+		]]>					
+			<if test="searchSdt != null and !searchSdt.equals('')">
+				<![CDATA[	AND B.OCCRRNC_DE >= REPLACE(#{searchSdt},'.','')	]]>
+			</if>
+			<if test="searchEdt != null and !searchEdt.equals('')">
+				<![CDATA[	AND B.OCCRRNC_DE <= REPLACE(#{searchEdt},'.','')	]]>
+			</if>
+			<![CDATA[	GROUP BY B.OCCRRNC_DE) ACT) AAA	]]>	
+			<if test='pageView.equals("EXCEL")'>
+			<![CDATA[	WHERE RNUM  BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}		]]>
+			</if>
+	</select>
+	
+	<select id="selectActStatsDateListTotCnt" parameterType="ActManageSearchVO" resultType="int">
+		<![CDATA[
+			SELECT 	COUNT(*) totcnt
+			FROM
+				(SELECT B.OCCRRNC_DE, SUM(B.RCNT) RCNT, SUM(B.VCNT) VCNT
+				FROM WEBLOG_DAY B WHERE WSITE='FRONT'
+		]]>					
+			<if test="searchSdt != null and !searchSdt.equals('')">
+				<![CDATA[	AND B.OCCRRNC_DE >= REPLACE(#{searchSdt},'.','')	]]>
+			</if>
+			<if test="searchEdt != null and !searchEdt.equals('')">
+				<![CDATA[	AND B.OCCRRNC_DE <= REPLACE(#{searchEdt},'.','')	]]>
+			</if>
+			<![CDATA[	GROUP BY B.OCCRRNC_DE) AAA	]]>	
+	</select>
+	
+	<select id="selectActStatsDeviceList" parameterType="ActManageSearchVO" resultType="egovMap">
+		<![CDATA[
+			SELECT CLNT_OS, COUNT(*) CNT FROM (SELECT B.CLNT_OS, B.RQESTER_IP
+			FROM WEBLOG_FRONT B WHERE 1=1
+		]]>					
+			<if test="searchSdt != null and !searchSdt.equals('')">
+				<![CDATA[	AND B.OCCRRNC_DE >= REPLACE(#{searchSdt},'.','')	]]>
+			</if>
+			<if test="searchEdt != null and !searchEdt.equals('')">
+				<![CDATA[	AND B.OCCRRNC_DE <= REPLACE(#{searchEdt},'.','')	]]>
+			</if>
+			<![CDATA[	GROUP BY CLNT_OS, RQESTER_IP) A GROUP BY A.CLNT_OS ORDER BY CLNT_OS DESC	]]>			
+	</select>
+	
+	<select id="selectActStatsMenuList" parameterType="ActManageSearchVO" resultType="egovMap">
+		<![CDATA[
+			SELECT DBO.GETCODENAME('COM071',C.MENU_CD) MENUNM, RCNT, VCNT FROM
+			(SELECT MENU_CD, SUM(RCNT) RCNT, SUM(VCNT) VCNT FROM WEBLOG_MENU WHERE WSITE = 'FRONT'
+		]]>			
+			<if test="searchSdt != null and !searchSdt.equals('')">
+				<![CDATA[	AND B.OCCRRNC_DE >= REPLACE(#{searchSdt},'.','')	]]>
+			</if>
+			<if test="searchEdt != null and !searchEdt.equals('')">
+				<![CDATA[	AND B.OCCRRNC_DE <= REPLACE(#{searchEdt},'.','')	]]>
+			</if>
+		<![CDATA[
+			 GROUP BY MENU_CD) A LEFT OUTER JOIN
+			(SELECT CODE MENU_CD,SEQ,CODE_ETC1 FROM CODE_DT CC WHERE CC.CODE_ID = 'COM071') C
+							ON A.MENU_CD = C.MENU_CD ORDER BY C.SEQ, C.CODE_ETC1
+		]]>			
+	</select>
+	
+	<select id="selectActStatsHistoryList" parameterType="ActManageSearchVO" resultType="egovMap">
+		<![CDATA[
+			SELECT  *
+			FROM
+			(SELECT  ROW_NUMBER() OVER(ORDER BY REQUST_ID DESC) RNUM, CONVERT(VARCHAR,REG_DATE,120) REG_DATE, RQESTER_IP, RQESTER_ID, RQESTER_ID_NM, URL, MENU_NM
+			FROM
+				(SELECT B.*, 
+				(SELECT USER_NM FROM INFO_EMPLYR WHERE EMPLYR_ID = RQESTER_ID ) RQESTER_ID_NM,
+				DBO.GETCODENAME(DBO.FNDECODE(#{searchWorkpart},'WEBLOG_FRONT','COM071','COM041'),B.MENU_CD) MENU_NM,
+				(SELECT  BBS_NM FROM BBS_MASTER WHERE BBS_ID=B.BBS_ID) BBS_ID_NM
+				FROM ${searchWorkpart} B WHERE 1=1
+		]]>					
+			<if test="searchSdt != null and !searchSdt.equals('')">
+				<![CDATA[	AND B.OCCRRNC_DE >= REPLACE(#{searchSdt},'.','')	]]>
+			</if>
+			<if test="searchEdt != null and !searchEdt.equals('')">
+				<![CDATA[	AND B.OCCRRNC_DE <= REPLACE(#{searchEdt},'.','')	]]>
+			</if>
+			<if test="searchOp1 != null and !searchOp1.equals('')">
+				<![CDATA[	AND B.MENU_CD = #{searchOp1}	]]>
+			</if>
+			<if test="searchWrd != null and !searchWrd.equals('')">
+				<if test="searchCnd == 0">
+				<![CDATA[	(RQESTER_ID LIKE '%' + #{searchWrd} + '%' OR RQESTER_IP LIKE '%' + #{searchWrd} + '%' OR URL LIKE '%' + #{searchWrd} + '%' OR RQESTER_ID IN(SELECT EMPLYR_ID FROM INFO_EMPLYR WHERE USER_NM LIKE '%' + #{searchWrd} + '%')) ]]>
+				</if>
+				<if test="searchCnd == 1">
+				<![CDATA[	RQESTER_ID IN(SELECT EMPLYR_ID FROM INFO_EMPLYR WHERE USER_NM LIKE '%' + #{searchWrd} + '%')	]]>
+				</if>
+				<if test="searchCnd == 2">
+				<![CDATA[	RQESTER_ID LIKE '%' + #{searchWrd} + '%'	]]>
+				</if>
+				<if test="searchCnd == 3">
+				<![CDATA[	RQESTER_IP LIKE '%' + #{searchWrd} + '%'	]]>
+				</if>
+				<if test="searchCnd == 4">
+				<![CDATA[	URL LIKE '%' + #{searchWrd} + '%'	]]>
+				</if>
+			</if>
+			<![CDATA[	) ACT) AAA	]]>
+			<if test='pageView.equals("EXCEL")'>
+			<![CDATA[	WHERE RNUM  BETWEEN #{firstIndex} + 1 AND #{firstIndex} + #{recordCountPerPage}		]]>
+			</if>
+	</select>
+	
+	<select id="selectActStatsHistoryListTotCnt" parameterType="ActManageSearchVO" resultType="int">
+		<![CDATA[
+			SELECT 	COUNT(*) totcnt
+			FROM
+				(SELECT *
+				FROM ${searchWorkpart} B WHERE 1=1
+		]]>					
+			<if test="searchSdt != null and !searchSdt.equals('')">
+				<![CDATA[	AND B.OCCRRNC_DE >= REPLACE(#{searchSdt},'.','')	]]>
+			</if>
+			<if test="searchEdt != null and !searchEdt.equals('')">
+				<![CDATA[	AND B.OCCRRNC_DE <= REPLACE(#{searchEdt},'.','')	]]>
+			</if>
+			<if test="searchOp1 != null and !searchOp1.equals('')">
+				<![CDATA[	AND B.MENU_CD = #{searchOp1}	]]>
+			</if>
+			<if test="searchWrd != null and !searchWrd.equals('')">
+				<if test="searchCnd == 0">
+				<![CDATA[	(RQESTER_ID LIKE '%' + #{searchWrd} + '%' OR RQESTER_IP LIKE '%' + #{searchWrd} + '%' OR URL LIKE '%' + #{searchWrd} + '%' OR RQESTER_ID IN(SELECT EMPLYR_ID FROM INFO_EMPLYR WHERE USER_NM LIKE '%' + #{searchWrd} + '%')) ]]>
+				</if>
+				<if test="searchCnd == 1">
+				<![CDATA[	RQESTER_ID IN(SELECT EMPLYR_ID FROM INFO_EMPLYR WHERE USER_NM LIKE '%' + #{searchWrd} + '%')	]]>
+				</if>
+				<if test="searchCnd == 2">
+				<![CDATA[	RQESTER_ID LIKE '%' + #{searchWrd} + '%'	]]>
+				</if>
+				<if test="searchCnd == 3">
+				<![CDATA[	RQESTER_IP LIKE '%' + #{searchWrd} + '%'	]]>
+				</if>
+				<if test="searchCnd == 4">
+				<![CDATA[	URL LIKE '%' + #{searchWrd} + '%'	]]>
+				</if>
+			</if>
+			<![CDATA[	) AAA		]]>
+	</select>
+	
+</mapper>
